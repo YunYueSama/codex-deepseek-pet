@@ -6,6 +6,21 @@ const image = document.querySelector('#pet-image');
 const bubble = document.querySelector('#speech-bubble');
 const speechText = document.querySelector('#speech-text');
 
+const petApi = window.petApi || {
+  onPointer: () => {},
+  onAction: () => {},
+  onWalk: () => {},
+  onSettings: () => {},
+  ready: () => {},
+  showContextMenu: () => {},
+  dragStart: () => {},
+  dragMove: () => {},
+  dragEnd: () => {},
+  recordInteraction: () => {},
+};
+
+root.dataset.runtime = window.petApi ? 'desktop' : 'browser';
+
 const ASSET_ROOT = '../../assets/pet';
 const POSES = {
   idle: {
@@ -230,7 +245,7 @@ function scheduleBlink() {
 
 function registerInteraction() {
   state.lastInteractionAt = Date.now();
-  window.petApi.recordInteraction('pointer');
+  petApi.recordInteraction('pointer');
 }
 
 function reactToClick() {
@@ -255,7 +270,7 @@ function animateLook() {
   window.requestAnimationFrame(animateLook);
 }
 
-window.petApi.onPointer((pointer) => {
+petApi.onPointer((pointer) => {
   state.targetLookX = pointer.direction === 'center' ? 0 : pointer.x;
   state.targetLookY = pointer.direction === 'center' ? 0 : pointer.y;
   root.dataset.gaze = pointer.direction;
@@ -266,12 +281,12 @@ window.petApi.onPointer((pointer) => {
   }
 });
 
-window.petApi.onAction((action) => {
+petApi.onAction((action) => {
   state.lastInteractionAt = Date.now();
   performAction(action);
 });
 
-window.petApi.onWalk(({ moving, direction }) => {
+petApi.onWalk(({ moving, direction }) => {
   state.walking = Boolean(moving);
   root.classList.toggle('is-walking', state.walking);
 
@@ -291,7 +306,7 @@ window.petApi.onWalk(({ moving, direction }) => {
   }
 });
 
-window.petApi.onSettings((settings) => {
+petApi.onSettings((settings) => {
   root.dataset.clickThrough = settings.clickThrough ? 'true' : 'false';
 });
 
@@ -327,11 +342,11 @@ shell.addEventListener('pointermove', (event) => {
     root.classList.add('is-dragging');
     setPose('shy');
     showBubble('等等，我的尾巴要打结啦！', 5000);
-    window.petApi.dragStart({ screenX: pointerDown.screenX, screenY: pointerDown.screenY });
+    petApi.dragStart({ screenX: pointerDown.screenX, screenY: pointerDown.screenY });
   }
 
   if (pointerDown.moved) {
-    window.petApi.dragMove({ screenX: event.screenX, screenY: event.screenY });
+    petApi.dragMove({ screenX: event.screenX, screenY: event.screenY });
   }
 });
 
@@ -346,7 +361,7 @@ shell.addEventListener('pointerup', (event) => {
   if (didMove) {
     state.dragging = false;
     root.classList.remove('is-dragging');
-    window.petApi.dragEnd();
+    petApi.dragEnd();
     return;
   }
 
@@ -363,7 +378,7 @@ shell.addEventListener('pointerup', (event) => {
 
 shell.addEventListener('pointercancel', () => {
   if (pointerDown?.moved) {
-    window.petApi.dragEnd();
+    petApi.dragEnd();
   }
   pointerDown = null;
   state.dragging = false;
@@ -372,7 +387,7 @@ shell.addEventListener('pointercancel', () => {
 
 shell.addEventListener('contextmenu', (event) => {
   event.preventDefault();
-  window.petApi.showContextMenu();
+  petApi.showContextMenu();
 });
 
 image.addEventListener('error', () => {
@@ -385,4 +400,4 @@ showBubble('我不是吃白饭的大肥鱼！', 3800);
 scheduleBlink();
 scheduleRandomAction();
 animateLook();
-window.petApi.ready();
+petApi.ready();

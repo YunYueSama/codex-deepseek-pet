@@ -90,6 +90,10 @@ body {
   transition: opacity 120ms ease;
 }
 
+.pet-root[data-runtime="browser"] .eye-layer {
+  display: none;
+}
+
 .pupil {
   position: absolute;
   z-index: 3;

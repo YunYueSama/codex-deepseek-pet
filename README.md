@@ -52,6 +52,8 @@ npm ci
 npm start
 ```
 
+> 直接用普通浏览器打开 `src/renderer/index.html` 时只会进入静态预览模式：动态瞳孔层会自动隐藏，系统级鼠标注视、桌面拖拽、托盘和窗口控制不会启用。请使用 `npm start` 体验完整桌宠功能。
+
 如果 Electron 官方下载源较慢，可临时使用镜像安装二进制：
 
 ```powershell
