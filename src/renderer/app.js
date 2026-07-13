@@ -11,16 +11,16 @@ const POSES = {
   idle: {
     src: `${ASSET_ROOT}/idle.png`,
     eyes: true,
-    leftEye: 32.7,
-    rightEye: 46.8,
-    eyeY: 38.2,
+    leftEye: 36,
+    rightEye: 48.8,
+    eyeY: 38.5,
   },
   curious: {
     src: `${ASSET_ROOT}/curious.png`,
     eyes: true,
-    leftEye: 31.9,
-    rightEye: 44.1,
-    eyeY: 35.9,
+    leftEye: 28.3,
+    rightEye: 39.1,
+    eyeY: 36.1,
   },
   shy: {
     src: `${ASSET_ROOT}/shy.png`,
@@ -39,9 +39,9 @@ const POSES = {
   excited: {
     src: `${ASSET_ROOT}/excited.png`,
     eyes: true,
-    leftEye: 24.8,
-    rightEye: 39.7,
-    eyeY: 41.2,
+    leftEye: 27.4,
+    rightEye: 41.3,
+    eyeY: 45.3,
   },
   'run-left': {
     src: `${ASSET_ROOT}/run-left.png`,
@@ -335,7 +335,7 @@ image.addEventListener('error', () => {
 });
 
 setPose('idle');
-showBubble('Codex Pet 到岗！会好好看着鼠标。', 3800);
+showBubble('我不是吃白饭的大肥鱼！', 3800);
 scheduleBlink();
 scheduleRandomAction();
 animateLook();

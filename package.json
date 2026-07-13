@@ -1,6 +1,6 @@
 {
   "name": "codex-pet",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A tiny transparent desktop companion that watches your cursor and keeps you company.",
   "main": "src/main/main.cjs",
   "author": "YunYueSama",

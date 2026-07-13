@@ -3,15 +3,11 @@ release/
 dist/
 artifacts/
 coverage/
+tmp/
 *.log
 .DS_Store
 Thumbs.db
 docs/qa-*.png
-
-# Local planning notes
-task_plan.md
-findings.md
-progress.md
 
 # Local editor settings
 .idea/

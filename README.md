@@ -1,6 +1,12 @@
 # Codex Pet
 
-一只会在桌面陪你工作的DeepSeek拟人宠物。她能读取系统级鼠标位置，在鼠标位于其他应用窗口时依然持续注视，并根据方向平滑转动眼神和身体。
+一只会在桌面陪你工作的蓝发鲸鱼女仆宠物。她能读取系统级鼠标位置，在鼠标位于其他应用窗口时依然持续注视，并根据方向平滑移动眼神。
+
+![Codex Pet 核心灵感来源](assets/reference.png)
+
+这张“我不是大肥鱼……”插画是项目的核心灵感来源；桌宠的角色形象、对白语气和鲸鱼主题均由此延伸。
+
+## 运行效果
 
 ![Codex Pet 运行预览](docs/preview.png)
 
@@ -12,6 +18,7 @@
 - 桌面交互：单击回应、双击庆祝、拖拽移动、右键打开菜单。
 - 系统托盘：自动散步、始终置顶、鼠标穿透、开机启动、尺寸和位置控制。
 - 多显示器：支持负坐标显示器，并在显示器插拔或分辨率变化后保留可见区域。
+- 高清常用素材：待机、思考和兴奋姿势使用透明高清重绘，其余动作统一为 `768x832` 透明画布。
 - 本地运行：无联网请求、无遥测；鼠标坐标只用于本机动画，不会保存或上传。
 
 ## 直接运行
@@ -35,7 +42,7 @@ npm start
 
 | 操作 | 效果 |
 | --- | --- |
-| 移动鼠标 | 眼睛和身体平滑看向鼠标所在方向 |
+| 移动鼠标 | 眼睛平滑看向鼠标所在方向 |
 | 单击宠物 | 随机回应和表情动作 |
 | 双击宠物 | 触发庆祝动作 |
 | 按住拖动 | 移动到任意屏幕位置 |
@@ -44,6 +51,77 @@ npm start
 | 单击托盘图标 | 显示或隐藏宠物 |
 
 设置会保存在 Electron 的用户数据目录中，重新启动后仍然有效。
+
+## 导入 ChatGPT / Codex 自定义宠物
+
+> 以下步骤已按 Windows 版 Codex `26.707.8168.0` 的实际界面核对。部分版本仍会显示 ChatGPT 名称；升级后入口文字可能略有变化。
+
+### 先理解两种格式
+
+本项目根目录运行的是独立 Electron 桌宠。`assets/pet/*.png` 是它的动作图，**不能直接复制到自定义宠物目录**。Codex 自定义宠物使用 v2 精灵表，每只宠物至少需要：
+
+```text
+%USERPROFILE%\.codex\pets\codex-pet\
+├─ pet.json
+└─ spritesheet.webp
+```
+
+其中 `spritesheet.webp` 必须是 `1536x2288` 的 8 列 11 行精灵表，单格为 `192x208`；前 9 行是标准动作，最后 2 行是 16 个顺时针注视方向。`pet.json` 必须声明 `spriteVersionNumber: 2`。
+
+### 1. 生成 v2 宠物包
+
+在 Codex 中打开本仓库，然后发送下面这段任务。内置 `hatch-pet` 技能会以本项目角色图为参考，生成动作、执行透明边缘和方向检查，并把通过检查的文件安装到自定义宠物目录：
+
+本仓库不提交未通过完整检查的半成品精灵表，因此首次导入前需要执行一次下面的生成任务。
+
+```text
+使用 hatch-pet 技能，将本仓库 assets/pet 下的角色素材制作成名为“蓝色大肥鱼”的 Codex v2 自定义宠物。
+保持蓝发、鲸鱼尾巴、深蓝白色女仆装和围裙鲸鱼图案一致；动作清晰、完整且不裁切。
+必须包含全部 9 行标准动作和 16 个顺时针注视方向，完成视觉检查后安装到 ~/.codex/pets/codex-pet。
+```
+
+生成完成后，目标目录中的清单应类似：
+
+```json
+{
+  "id": "codex-pet",
+  "displayName": "蓝色大肥鱼",
+  "description": "我不是吃白饭的大肥鱼！",
+  "spriteVersionNumber": 2,
+  "spritesheetPath": "spritesheet.webp"
+}
+```
+
+### 2. 手动复制已有宠物包
+
+如果你已经拿到了通过检查的 `pet.json` 和 `spritesheet.webp`，可以用 PowerShell 复制：
+
+```powershell
+$source = "D:\path\to\codex-pet-package"
+$target = Join-Path $env:USERPROFILE ".codex\pets\codex-pet"
+
+New-Item -ItemType Directory -Force $target | Out-Null
+Copy-Item (Join-Path $source "pet.json") $target -Force
+Copy-Item (Join-Path $source "spritesheet.webp") $target -Force
+```
+
+请把 `$source` 改成实际宠物包目录。不要把 `.env`、密钥或其他私人文件复制进去。
+
+### 3. 在设置中选择
+
+1. 打开 ChatGPT / Codex 桌面版设置。
+2. 进入“个性化”或“宠物”页面。
+3. 在“自定义宠物”区域点击“打开文件夹”，确认目录为 `%USERPROFILE%\.codex\pets`。
+4. 返回设置页，点击刷新按钮。
+5. 找到“蓝色大肥鱼”，点击“选择”；没有立即出现时，完全退出并重新启动桌面版。
+
+### 常见问题
+
+- 找不到宠物：确认目录层级是 `pets\codex-pet\pet.json`，不要多套一层压缩包目录。
+- 显示加载失败：检查 JSON 语法、`spritesheetPath` 文件名和 `spriteVersionNumber: 2`。
+- 只有单张 PNG：这不是可导入包，需要先按第 1 步生成 v2 精灵表。
+- 注视方向错误：v2 的 `000` 代表向上，不是正面；应重新运行方向检查，不能只改清单。
+- 仍然没有刷新按钮：重启桌面版后再次进入宠物设置。
 
 ## 构建 Windows 安装包
 
@@ -78,12 +156,16 @@ npm test
 ```text
 assets/pet/          透明动作素材
 build/               Windows 应用图标
+docs/                运行预览
 src/main/            窗口、托盘、全局鼠标和散步逻辑
 src/renderer/        桌宠画面、眼神与动作状态机
 src/preload.cjs      安全 IPC 桥接
 tests/               Node.js 自动化测试
+task_plan.md         中文任务计划
+findings.md          中文调研记录
+progress.md          中文进度记录
 ```
 
 ## 许可
 
-程序代码使用 [MIT License](LICENSE)。角色图片不包含在 MIT 授权范围内，详见 [ASSET_LICENSE.md](ASSET_LICENSE.md)。
+程序代码使用 [MIT License](LICENSE)。角色图片不包含在 MIT 授权范围内，详见 [图片素材说明](ASSET_LICENSE.md)。

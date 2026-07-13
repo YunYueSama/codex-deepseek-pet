@@ -15,8 +15,8 @@ const {
 const { clamp, clampWindowBounds, pointerVector } = require('./geometry.cjs');
 const { createSettingsStore } = require('./settings.cjs');
 
-const BASE_WIDTH = 360;
-const BASE_HEIGHT = 460;
+const BASE_WIDTH = 300;
+const BASE_HEIGHT = 390;
 const POINTER_INTERVAL_MS = 32;
 const WANDER_INTERVAL_MS = 32;
 const captureArgument = process.argv.find((argument) => argument.startsWith('--capture='));

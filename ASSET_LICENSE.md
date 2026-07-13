@@ -1,5 +1,5 @@
-# Artwork notice
+# 图片素材说明
 
-The character artwork in `assets/` was supplied by the project owner for use in this repository.
+`assets/` 中的角色原始图片由项目所有者提供，用于本仓库。部分动作图包含基于该角色原图生成的高清重绘版本，其角色设计、服装、标志和其他视觉元素仍沿用项目所有者提供的素材。
 
-It is not covered by the MIT License that applies to the source code. No additional permission to copy, redistribute, sell, sublicense, or create derivative works from the artwork is granted by this repository. Reuse requires permission from the applicable rights holder.
+这些图片不属于源码所使用的 MIT License。除非另有明确授权，本仓库不授予复制、重新分发、出售、再许可或制作图片衍生作品的额外权利。复用图片前必须获得相应权利人的许可。

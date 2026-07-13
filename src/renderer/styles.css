@@ -43,14 +43,8 @@ body {
   pointer-events: auto;
   cursor: grab;
   transform-origin: 50% 55%;
-  transform:
-    translate(
-      calc(var(--look-x) * 0.75vw),
-      calc(var(--look-y) * 0.45vh)
-    )
-    rotate(calc(var(--look-x) * 1.8deg));
   transition: filter 180ms ease;
-  will-change: transform;
+  will-change: filter;
 }
 
 .pet-shell:active,
@@ -64,7 +58,9 @@ body {
   display: block;
   width: 100%;
   height: auto;
+  image-rendering: auto;
   pointer-events: none;
+  -webkit-user-drag: none;
   transform-origin: 50% 85%;
   filter: drop-shadow(0 0.9vh 0.55vh rgb(24 44 92 / 22%));
   animation: breathe 3.8s ease-in-out infinite;
