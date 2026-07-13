@@ -1,14 +1,14 @@
-# Codex Pet
+# [**codex-deepseek-pet**](https://github.com/YunYueSama/codex-deepseek-pet)
 
 一只会在桌面陪你工作的蓝发鲸鱼女仆宠物。她能读取系统级鼠标位置，在鼠标位于其他应用窗口时依然持续注视，并根据方向平滑移动眼神。
 
-![Codex Pet 核心灵感来源](assets/reference.png)
+![codex-deepseek-pet 核心灵感来源](assets/你这吃白饭的蓝色大肥鱼.png)
 
 这张“我不是大肥鱼……”插画是项目的核心灵感来源；桌宠的角色形象、对白语气和鲸鱼主题均由此延伸。
 
 ## 运行效果
 
-![Codex Pet 运行预览](docs/preview.png)
+![codex-deepseek-pet 运行预览](docs/preview.png)
 
 ## 功能
 
@@ -61,7 +61,7 @@ npm start
 本项目根目录运行的是独立 Electron 桌宠。`assets/pet/*.png` 是它的动作图，**不能直接复制到自定义宠物目录**。Codex 自定义宠物使用 v2 精灵表，每只宠物至少需要：
 
 ```text
-%USERPROFILE%\.codex\pets\codex-pet\
+%USERPROFILE%\.codex\pets\codex-deepseek-pet\
 ├─ pet.json
 └─ spritesheet.webp
 ```
@@ -77,14 +77,14 @@ npm start
 ```text
 使用 hatch-pet 技能，将本仓库 assets/pet 下的角色素材制作成名为“蓝色大肥鱼”的 Codex v2 自定义宠物。
 保持蓝发、鲸鱼尾巴、深蓝白色女仆装和围裙鲸鱼图案一致；动作清晰、完整且不裁切。
-必须包含全部 9 行标准动作和 16 个顺时针注视方向，完成视觉检查后安装到 ~/.codex/pets/codex-pet。
+必须包含全部 9 行标准动作和 16 个顺时针注视方向，完成视觉检查后安装到 ~/.codex/pets/codex-deepseek-pet。
 ```
 
 生成完成后，目标目录中的清单应类似：
 
 ```json
 {
-  "id": "codex-pet",
+  "id": "codex-deepseek-pet",
   "displayName": "蓝色大肥鱼",
   "description": "我不是吃白饭的大肥鱼！",
   "spriteVersionNumber": 2,
@@ -97,8 +97,8 @@ npm start
 如果你已经拿到了通过检查的 `pet.json` 和 `spritesheet.webp`，可以用 PowerShell 复制：
 
 ```powershell
-$source = "D:\path\to\codex-pet-package"
-$target = Join-Path $env:USERPROFILE ".codex\pets\codex-pet"
+$source = "D:\path\to\codex-deepseek-pet-package"
+$target = Join-Path $env:USERPROFILE ".codex\pets\codex-deepseek-pet"
 
 New-Item -ItemType Directory -Force $target | Out-Null
 Copy-Item (Join-Path $source "pet.json") $target -Force
@@ -117,7 +117,7 @@ Copy-Item (Join-Path $source "spritesheet.webp") $target -Force
 
 ### 常见问题
 
-- 找不到宠物：确认目录层级是 `pets\codex-pet\pet.json`，不要多套一层压缩包目录。
+- 找不到宠物：确认目录层级是 `pets\codex-deepseek-pet\pet.json`，不要多套一层压缩包目录。
 - 显示加载失败：检查 JSON 语法、`spritesheetPath` 文件名和 `spriteVersionNumber: 2`。
 - 只有单张 PNG：这不是可导入包，需要先按第 1 步生成 v2 精灵表。
 - 注视方向错误：v2 的 `000` 代表向上，不是正面；应重新运行方向检查，不能只改清单。

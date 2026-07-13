@@ -2,7 +2,7 @@
 
 ## 仓库
 
-- 远程仓库为 `git@github.com:YunYueSama/codex-pet.git`。
+- 远程仓库为 `git@github.com:YunYueSama/codex-deepseek-pet.git`。
 - 项目位于 `D:\Work\Projects\codex-pet`，当前分支为 `main`。
 
 ## 产品方向

@@ -1,7 +1,7 @@
 {
-  "name": "codex-pet",
-  "version": "1.1.0",
-  "description": "A tiny transparent desktop companion that watches your cursor and keeps you company.",
+  "name": "codex-deepseek-pet",
+  "version": "1.1.1",
+  "description": "A transparent DeepSeek-inspired desktop companion that watches your cursor and keeps you company.",
   "main": "src/main/main.cjs",
   "author": "YunYueSama",
   "license": "MIT",
@@ -20,7 +20,7 @@
   },
   "build": {
     "appId": "com.yunyuesama.codexpet",
-    "productName": "Codex Pet",
+    "productName": "codex-deepseek-pet",
     "asar": true,
     "npmRebuild": false,
     "directories": {
@@ -44,7 +44,7 @@
         }
       ],
       "icon": "build/icon.ico",
-      "artifactName": "Codex-Pet-Setup-${version}-${arch}.${ext}"
+      "artifactName": "codex-deepseek-pet-Setup-${version}-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -52,7 +52,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Codex Pet"
+      "shortcutName": "codex-deepseek-pet"
     }
   },
   "devDependencies": {

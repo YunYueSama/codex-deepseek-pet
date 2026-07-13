@@ -1,4 +1,4 @@
-# Codex Pet 任务计划
+# codex-deepseek-pet 任务计划
 
 ## 目标
 

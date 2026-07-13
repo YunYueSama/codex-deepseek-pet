@@ -49,6 +49,22 @@ let dragging = null;
 let wanderTarget = null;
 let nextWanderAt = Date.now() + 8_000;
 
+function migrateLegacySettings() {
+  const currentSettingsPath = path.join(app.getPath('userData'), 'settings.json');
+  const legacySettingsPath = path.join(app.getPath('appData'), 'Codex Pet', 'settings.json');
+
+  if (fs.existsSync(currentSettingsPath) || !fs.existsSync(legacySettingsPath)) {
+    return;
+  }
+
+  try {
+    fs.mkdirSync(path.dirname(currentSettingsPath), { recursive: true });
+    fs.copyFileSync(legacySettingsPath, currentSettingsPath, fs.constants.COPYFILE_EXCL);
+  } catch {
+    // A failed migration should not prevent the pet from starting with defaults.
+  }
+}
+
 function scaledWindowSize(scale = settings.scale) {
   return {
     width: Math.round(BASE_WIDTH * scale),
@@ -164,7 +180,7 @@ function buildTrayTemplate() {
   ];
 
   return [
-    { label: 'Codex Pet', enabled: false },
+    { label: 'codex-deepseek-pet', enabled: false },
     {
       label: '和她打个招呼',
       click: () => send('pet:action', {
@@ -215,7 +231,7 @@ function buildTrayTemplate() {
     },
     { type: 'separator' },
     {
-      label: '退出 Codex Pet',
+      label: '退出 codex-deepseek-pet',
       click: () => {
         isQuitting = true;
         app.quit();
@@ -234,7 +250,7 @@ function createTray() {
   const iconPath = path.join(__dirname, '..', '..', 'assets', 'pet', 'idle.png');
   const icon = nativeImage.createFromPath(iconPath).resize({ width: 32, height: 35 });
   tray = new Tray(icon);
-  tray.setToolTip('Codex Pet');
+  tray.setToolTip('codex-deepseek-pet');
   rebuildTrayMenu();
   tray.on('click', toggleVisibility);
 }
@@ -447,6 +463,7 @@ if (!hasSingleInstanceLock) {
 
   app.whenReady().then(() => {
     app.setAppUserModelId('com.yunyuesama.codexpet');
+    migrateLegacySettings();
     settingsStore = createSettingsStore(app.getPath('userData'));
     settings = settingsStore.load();
     registerIpcHandlers();
