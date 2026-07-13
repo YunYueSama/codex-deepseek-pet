@@ -92,11 +92,24 @@ npm start
 
 其中 `spritesheet.webp` 必须是 `1536x2288` 的 8 列 11 行精灵表，单格为 `192x208`；前 9 行是标准动作，最后 2 行是 16 个顺时针注视方向。`pet.json` 必须声明 `spriteVersionNumber: 2`。
 
-### 1. 生成 v2 宠物包
+本仓库已经提供通过完整检查的可导入包：[codex-deepseek-pet](codex-deepseek-pet)。它包含全部 9 行标准动作和 16 个顺时针注视方向。
+
+### 1. 直接导入仓库中的宠物包
+
+在仓库根目录运行：
+
+```powershell
+$source = Join-Path $PWD "codex-deepseek-pet"
+$target = Join-Path $env:USERPROFILE ".codex\pets\codex-deepseek-pet"
+
+New-Item -ItemType Directory -Force $target | Out-Null
+Copy-Item (Join-Path $source "pet.json") $target -Force
+Copy-Item (Join-Path $source "spritesheet.webp") $target -Force
+```
+
+### 2. 重新生成 v2 宠物包
 
 在 Codex 中打开本仓库，然后发送下面这段任务。内置 `hatch-pet` 技能会以本项目角色图为参考，生成动作、执行透明边缘和方向检查，并把通过检查的文件安装到自定义宠物目录：
-
-本仓库不提交未通过完整检查的半成品精灵表，因此首次导入前需要执行一次下面的生成任务。
 
 ```text
 使用 hatch-pet 技能，将本仓库 assets/pet 下的角色素材制作成名为“蓝色大肥鱼”的 Codex v2 自定义宠物。
@@ -116,7 +129,7 @@ npm start
 }
 ```
 
-### 2. 手动复制已有宠物包
+### 3. 手动复制其他位置的宠物包
 
 如果你已经拿到了通过检查的 `pet.json` 和 `spritesheet.webp`，可以用 PowerShell 复制：
 
@@ -131,7 +144,7 @@ Copy-Item (Join-Path $source "spritesheet.webp") $target -Force
 
 请把 `$source` 改成实际宠物包目录。不要把 `.env`、密钥或其他私人文件复制进去。
 
-### 3. 在设置中选择
+### 4. 在设置中选择
 
 1. 打开 ChatGPT / Codex 桌面版设置。
 2. 进入“个性化”或“宠物”页面。
