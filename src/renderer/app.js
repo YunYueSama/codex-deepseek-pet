@@ -25,16 +25,16 @@ const POSES = {
   shy: {
     src: `${ASSET_ROOT}/shy.png`,
     eyes: true,
-    leftEye: 32.9,
-    rightEye: 46.1,
-    eyeY: 37,
+    leftEye: 33.2,
+    rightEye: 48.5,
+    eyeY: 40.1,
   },
   happy: {
     src: `${ASSET_ROOT}/happy.png`,
     eyes: true,
-    leftEye: 35.9,
-    rightEye: 50.1,
-    eyeY: 36.8,
+    leftEye: 27.4,
+    rightEye: 41.3,
+    eyeY: 45.3,
   },
   excited: {
     src: `${ASSET_ROOT}/excited.png`,
@@ -42,6 +42,32 @@ const POSES = {
     leftEye: 27.4,
     rightEye: 41.3,
     eyeY: 45.3,
+  },
+  wave: {
+    src: `${ASSET_ROOT}/wave.png`,
+    eyes: true,
+    leftEye: 32.4,
+    rightEye: 46.8,
+    eyeY: 41.2,
+  },
+  surprised: {
+    src: `${ASSET_ROOT}/surprised.png`,
+    eyes: true,
+    leftEye: 34.1,
+    rightEye: 47.9,
+    eyeY: 39.6,
+  },
+  jump: {
+    src: `${ASSET_ROOT}/jump.png`,
+    eyes: false,
+  },
+  sleepy: {
+    src: `${ASSET_ROOT}/sleepy.png`,
+    eyes: false,
+  },
+  review: {
+    src: `${ASSET_ROOT}/review.png`,
+    eyes: false,
   },
   'run-left': {
     src: `${ASSET_ROOT}/run-left.png`,
@@ -53,11 +79,29 @@ const POSES = {
   },
 };
 
+const ACTION_NAMES = [
+  'idle',
+  'curious',
+  'shy',
+  'happy',
+  'excited',
+  'wave',
+  'surprised',
+  'jump',
+  'sleepy',
+  'review',
+  'nap',
+  'run-left',
+  'run-right',
+];
+
 const RANDOM_ACTIONS = [
   { name: 'curious', message: '这个窗口里藏着什么呀？', duration: 3200 },
   { name: 'happy', message: '写得不错！奖励一朵小浪花。', duration: 2800 },
   { name: 'shy', message: '我没有偷看……只看了一点点。', duration: 3000 },
   { name: 'excited', message: '灵感来了就快点记下来！', duration: 2600 },
+  { name: 'wave', message: '辛苦啦，我一直在这里。', duration: 2800 },
+  { name: 'review', message: '让我认真审阅一下。', duration: 3400 },
   { name: 'idle', message: '', duration: 2400 },
 ];
 
@@ -66,6 +110,8 @@ const CLICK_ACTIONS = [
   { name: 'curious', message: '是在叫我吗？', duration: 2400 },
   { name: 'shy', message: '突然碰我，会害羞的……', duration: 2500 },
   { name: 'excited', message: '再点一下，我就要起飞啦！', duration: 2300 },
+  { name: 'wave', message: '嗨！今天也一起加油。', duration: 2500 },
+  { name: 'surprised', message: '欸，是新的任务吗？', duration: 2500 },
 ];
 
 const state = {
@@ -103,7 +149,7 @@ function setPose(name) {
 }
 
 function clearActionClasses() {
-  for (const name of ['idle', 'curious', 'shy', 'happy', 'excited', 'nap']) {
+  for (const name of ACTION_NAMES) {
     root.classList.remove(`action-${name}`);
   }
 }
@@ -143,11 +189,11 @@ function performAction({ name = 'idle', message = '', duration = 2600 } = {}) {
 
   window.clearTimeout(state.actionTimer);
   state.action = name;
-  state.sleeping = name === 'nap';
+  state.sleeping = name === 'nap' || name === 'sleepy';
   state.actionUntil = Date.now() + duration;
   clearActionClasses();
   root.classList.add(`action-${name}`);
-  setPose(name === 'nap' ? 'shy' : name);
+  setPose(name === 'nap' ? 'sleepy' : name);
   showBubble(message, duration - 250);
   state.actionTimer = window.setTimeout(returnToIdle, duration);
 }
@@ -195,8 +241,8 @@ function reactToClick() {
 function reactToDoubleClick() {
   registerInteraction();
   performAction({
-    name: 'excited',
-    message: '双倍摸摸！那就转两圈给你看！',
+    name: 'jump',
+    message: '双倍摸摸！高兴得跳起来啦！',
     duration: 3600,
   });
 }
