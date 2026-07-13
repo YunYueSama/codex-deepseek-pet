@@ -30,3 +30,4 @@
 - 用户要求再次重试高清“开心”“害羞”和 v2“审阅”：三项仍因内置图片接口网络错误未产生文件，未切换到需要 `OPENAI_API_KEY` 的 CLI 备用方案；现有开心与害羞表情继续保留。
 - v2 中间结果留在已忽略的 `tmp/` 目录；由于“审阅”行和后续 16 方向尚未完成，不发布不合格的半成品宠物包。
 - 已将用户新增的核心灵感图恢复为 `assets/reference.png`（`1254x1254` PNG），并放在 README 的第一张项目介绍图位置。
+- 已创建提交 `a229b1f`（`feat: sharpen pet visuals and localize docs`）并推送；GitHub 将旧仓库地址重定向到 `git@github.com:YunYueSama/codex-deepseek-pet.git`，本地 `origin` 已同步更新。
