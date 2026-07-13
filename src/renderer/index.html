@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'"
+    >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Codex Pet</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main id="pet-root" class="pet-root" data-pose="idle" data-gaze="center">
+      <div id="speech-bubble" class="speech-bubble" role="status" aria-live="polite">
+        <span id="speech-text"></span>
+      </div>
+
+      <div class="sparkles" aria-hidden="true">
+        <i></i><i></i><i></i><i></i><i></i>
+      </div>
+
+      <div id="pet-shell" class="pet-shell" role="button" aria-label="Codex Pet">
+        <div class="ground-shadow" aria-hidden="true"></div>
+        <img
+          id="pet-image"
+          class="pet-image"
+          src="../../assets/pet/idle.png"
+          alt="蓝色鲸鱼女仆桌面宠物"
+          draggable="false"
+        >
+        <div id="eye-layer" class="eye-layer" aria-hidden="true">
+          <span class="pupil pupil-left"></span>
+          <span class="pupil pupil-right"></span>
+          <span class="eyelid eyelid-left"></span>
+          <span class="eyelid eyelid-right"></span>
+        </div>
+      </div>
+    </main>
+    <script src="./app.js"></script>
+  </body>
+</html>

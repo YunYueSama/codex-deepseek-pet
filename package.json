@@ -1,0 +1,63 @@
+{
+  "name": "codex-pet",
+  "version": "1.0.0",
+  "description": "A tiny transparent desktop companion that watches your cursor and keeps you company.",
+  "main": "src/main/main.cjs",
+  "author": "YunYueSama",
+  "license": "MIT",
+  "private": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "check": "node --check src/main/main.cjs && node --check src/main/settings.cjs && node --check src/main/geometry.cjs && node --check src/preload.cjs && node --check src/renderer/app.js",
+    "icon": "node scripts/build-icon.mjs",
+    "test": "node --test tests/*.test.cjs",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "com.yunyuesama.codexpet",
+    "productName": "Codex Pet",
+    "asar": true,
+    "npmRebuild": false,
+    "directories": {
+      "output": "artifacts",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "assets/pet/**/*",
+      "package.json",
+      "LICENSE",
+      "ASSET_LICENSE.md"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "Codex-Pet-Setup-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Codex Pet"
+    }
+  },
+  "devDependencies": {
+    "electron": "43.1.0",
+    "electron-builder": "26.6.0",
+    "png-to-ico": "3.0.2"
+  }
+}
