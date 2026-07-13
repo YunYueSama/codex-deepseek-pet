@@ -10,6 +10,26 @@
 
 ![codex-deepseek-pet 运行预览](docs/preview.png)
 
+### 全方向鼠标注视
+
+宠物使用系统级鼠标坐标，即使鼠标位于其他应用窗口，也会继续平滑看向对应方向。
+
+| 看向左上 | 看向右下 |
+| :---: | :---: |
+| <img src="docs/gaze-north-west.png" alt="宠物看向左上" width="300"> | <img src="docs/gaze-south-east.png" alt="宠物看向右下" width="300"> |
+
+### 动作与表情设计
+
+全部运行时姿势都使用透明背景，并保持蓝色渐变长发、鲸鱼尾巴、深蓝白色女仆装、金色裙摆装饰和围裙鲸鱼图案一致。
+
+| 待机 | 思考 | 开心 | 害羞 |
+| :---: | :---: | :---: | :---: |
+| <img src="assets/pet/idle.png" alt="待机动作" width="150"> | <img src="assets/pet/curious.png" alt="思考动作" width="150"> | <img src="assets/pet/happy.png" alt="开心动作" width="150"> | <img src="assets/pet/shy.png" alt="害羞动作" width="150"> |
+| **兴奋** | **挥手** | **惊讶** | **审阅** |
+| <img src="assets/pet/excited.png" alt="兴奋动作" width="150"> | <img src="assets/pet/wave.png" alt="挥手动作" width="150"> | <img src="assets/pet/surprised.png" alt="惊讶动作" width="150"> | <img src="assets/pet/review.png" alt="审阅动作" width="150"> |
+| **跳跃** | **睡眠** | **向左跑** | **向右跑** |
+| <img src="assets/pet/jump.png" alt="跳跃动作" width="150"> | <img src="assets/pet/sleepy.png" alt="睡眠动作" width="150"> | <img src="assets/pet/run-left.png" alt="向左跑动作" width="150"> | <img src="assets/pet/run-right.png" alt="向右跑动作" width="150"> |
+
 ## 功能
 
 - 全方向鼠标注视：中心、上、右上、右、右下、下、左下、左、左上九个稳定区域。
