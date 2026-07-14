@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const {
   clampWindowBounds,
   directionFromDelta,
+  fixedSizeBounds,
   pointerVector,
 } = require('../src/main/geometry.cjs');
 
@@ -53,4 +54,11 @@ test('clampWindowBounds leaves a visible grip on screen', () => {
     width: 360,
     height: 460,
   });
+});
+
+test('fixedSizeBounds discards dimensions polluted while moving the window', () => {
+  assert.deepEqual(
+    fixedSizeBounds({ x: 819.4, y: 182.2, width: 387, height: 314 }, { width: 240, height: 312 }),
+    { x: 819, y: 182, width: 240, height: 312 },
+  );
 });

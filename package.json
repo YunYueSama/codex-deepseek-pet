@@ -1,6 +1,6 @@
 {
   "name": "codex-deepseek-pet",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A transparent DeepSeek-inspired desktop companion that watches your cursor and keeps you company.",
   "main": "src/main/main.cjs",
   "author": "YunYueSama",
@@ -15,6 +15,7 @@
     "check": "node --check src/main/main.cjs && node --check src/main/settings.cjs && node --check src/main/geometry.cjs && node --check src/preload.cjs && node --check src/renderer/app.js",
     "icon": "node scripts/build-icon.mjs",
     "test": "node --test tests/*.test.cjs",
+    "test:electron": "node scripts/smoke-electron.cjs",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --win nsis"
   },

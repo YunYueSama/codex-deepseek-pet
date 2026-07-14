@@ -12,7 +12,12 @@ const {
   screen,
   Tray,
 } = require('electron');
-const { clamp, clampWindowBounds, pointerVector } = require('./geometry.cjs');
+const {
+  clamp,
+  clampWindowBounds,
+  fixedSizeBounds,
+  pointerVector,
+} = require('./geometry.cjs');
 const { createSettingsStore } = require('./settings.cjs');
 
 const BASE_WIDTH = 300;
@@ -25,6 +30,11 @@ const previewGazeArgument = process.argv.find((argument) => argument.startsWith(
 const previewGaze = previewGazeArgument ? previewGazeArgument.slice('--preview-gaze='.length) : null;
 const previewActionArgument = process.argv.find((argument) => argument.startsWith('--preview-action='));
 const previewAction = previewActionArgument ? previewActionArgument.slice('--preview-action='.length) : null;
+const testUserDataArgument = process.argv.find((argument) => argument.startsWith('--test-user-data='));
+
+if (testUserDataArgument) {
+  app.setPath('userData', path.resolve(testUserDataArgument.slice('--test-user-data='.length)));
+}
 
 const PREVIEW_GAZE_VECTORS = {
   center: { x: 0, y: 0 },
@@ -48,6 +58,7 @@ let isQuitting = false;
 let dragging = null;
 let wanderTarget = null;
 let nextWanderAt = Date.now() + 8_000;
+let captureScheduled = false;
 
 function migrateLegacySettings() {
   const currentSettingsPath = path.join(app.getPath('userData'), 'settings.json');
@@ -105,6 +116,14 @@ function persistPosition() {
   settingsStore.save(settings);
 }
 
+function movePetWindow(x, y) {
+  if (!petWindow || petWindow.isDestroyed()) {
+    return;
+  }
+
+  petWindow.setBounds(fixedSizeBounds({ x, y }, scaledWindowSize()), false);
+}
+
 function applyWindowSettings() {
   if (!petWindow || petWindow.isDestroyed()) {
     return;
@@ -143,7 +162,7 @@ function updateScale(scale) {
   };
   const display = screen.getDisplayMatching(oldBounds);
   const nextBounds = clampWindowBounds(proposed, display.workArea, 28);
-  petWindow.setBounds(nextBounds, true);
+  petWindow.setBounds(nextBounds, false);
   settings = { ...settings, scale, position: { x: nextBounds.x, y: nextBounds.y } };
   settingsStore.save(settings);
   send('pet:settings', settings);
@@ -155,7 +174,7 @@ function resetPosition() {
   const bounds = initialWindowBounds();
   settings.position = { x: bounds.x, y: bounds.y };
   settingsStore.save(settings);
-  petWindow.setBounds(bounds, true);
+  petWindow.setBounds(bounds, false);
   send('pet:action', { name: 'happy', message: '回来啦！这里视野刚刚好。', duration: 2400 });
 }
 
@@ -283,24 +302,6 @@ function createPetWindow() {
   petWindow.once('ready-to-show', () => {
     petWindow.showInactive();
     applyWindowSettings();
-
-    if (previewAction) {
-      send('pet:action', {
-        name: previewAction,
-        message: `${previewAction} action preview`,
-        duration: 5_000,
-      });
-    }
-
-    if (capturePath) {
-      setTimeout(async () => {
-        const image = await petWindow.webContents.capturePage();
-        fs.mkdirSync(path.dirname(capturePath), { recursive: true });
-        fs.writeFileSync(capturePath, image.toPNG());
-        isQuitting = true;
-        app.quit();
-      }, 1_200);
-    }
   });
   petWindow.on('close', (event) => {
     if (!isQuitting) {
@@ -327,7 +328,7 @@ function startPointerTracking() {
     }
 
     const cursor = screen.getCursorScreenPoint();
-    const bounds = petWindow.getBounds();
+    const bounds = fixedSizeBounds(petWindow.getBounds(), scaledWindowSize());
     const origin = {
       x: bounds.x + Math.round(bounds.width * 0.5),
       y: bounds.y + Math.round(bounds.height * 0.39),
@@ -380,7 +381,7 @@ function startWandering() {
     const delta = wanderTarget - bounds.x;
     const direction = delta < 0 ? 'left' : 'right';
     const step = Math.sign(delta) * Math.min(Math.abs(delta), Math.max(2, Math.round(2.4 * settings.scale)));
-    petWindow.setPosition(bounds.x + step, bounds.y);
+    movePetWindow(bounds.x + step, bounds.y);
     send('pet:walk', { moving: true, direction });
 
     if (Math.abs(delta) <= Math.abs(step)) {
@@ -391,7 +392,31 @@ function startWandering() {
 }
 
 function registerIpcHandlers() {
-  ipcMain.on('pet:ready', () => send('pet:settings', settings));
+  ipcMain.on('pet:ready', (event) => {
+    event.sender.send('pet:settings', settings);
+
+    if (previewAction) {
+      event.sender.send('pet:action', {
+        name: previewAction,
+        message: `${previewAction} action preview`,
+        duration: 5_000,
+      });
+    }
+
+    if (capturePath && !captureScheduled) {
+      captureScheduled = true;
+      setTimeout(async () => {
+        try {
+          const image = await petWindow.webContents.capturePage();
+          fs.mkdirSync(path.dirname(capturePath), { recursive: true });
+          fs.writeFileSync(capturePath, image.toPNG());
+        } finally {
+          isQuitting = true;
+          app.quit();
+        }
+      }, 1_200);
+    }
+  });
   ipcMain.on('pet:context-menu', () => tray?.popUpContextMenu());
   ipcMain.on('pet:interaction', () => {
     nextWanderAt = Date.now() + 10_000;
@@ -414,7 +439,7 @@ function registerIpcHandlers() {
     if (!dragging || !Number.isFinite(point?.screenX) || !Number.isFinite(point?.screenY)) {
       return;
     }
-    const size = petWindow.getBounds();
+    const size = scaledWindowSize();
     const requested = {
       x: Math.round(point.screenX - dragging.offsetX),
       y: Math.round(point.screenY - dragging.offsetY),
@@ -423,7 +448,7 @@ function registerIpcHandlers() {
     };
     const display = screen.getDisplayNearestPoint({ x: point.screenX, y: point.screenY });
     const next = clampWindowBounds(requested, display.workArea, 28);
-    petWindow.setPosition(next.x, next.y);
+    movePetWindow(next.x, next.y);
   });
 
   ipcMain.on('pet:drag-end', () => {
@@ -445,10 +470,10 @@ function keepWindowVisible() {
   if (!petWindow || petWindow.isDestroyed()) {
     return;
   }
-  const bounds = petWindow.getBounds();
+  const bounds = fixedSizeBounds(petWindow.getBounds(), scaledWindowSize());
   const display = screen.getDisplayMatching(bounds);
   const safeBounds = clampWindowBounds(bounds, display.workArea, 28);
-  petWindow.setBounds(safeBounds);
+  petWindow.setBounds(safeBounds, false);
   persistPosition();
 }
 

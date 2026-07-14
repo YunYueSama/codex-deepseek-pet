@@ -209,9 +209,10 @@ npm run dist
 ```cmd
 npm run check
 npm test
+npm run test:electron
 ```
 
-方向计算、中心死区、窗口边界和设置校验均有自动化测试。运行时采用 Electron 安全隔离：渲染层不启用 Node.js，只通过受限的 preload API 与主进程通信。
+方向计算、中心死区、固定窗口尺寸和设置校验均有自动化测试。`npm run test:electron` 会使用隔离的临时用户目录真正启动 Electron，并验证渲染脚本完成 preload 握手和截图。运行时采用 Electron 安全隔离：渲染层不启用 Node.js，只通过受限的 preload API 与主进程通信。
 
 ## 项目结构
 
@@ -219,6 +220,7 @@ npm test
 assets/pet/          透明动作素材
 build/               Windows 应用图标
 docs/                运行预览
+scripts/             图标构建与 Electron 冒烟测试
 src/main/            窗口、托盘、全局鼠标和散步逻辑
 src/renderer/        桌宠画面、眼神与动作状态机
 src/preload.cjs      安全 IPC 桥接

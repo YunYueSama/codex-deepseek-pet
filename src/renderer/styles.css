@@ -4,9 +4,10 @@
   font-synthesis: none;
   --look-x: 0;
   --look-y: 0;
-  --eye-left-x: 32.7vw;
-  --eye-right-x: 46.8vw;
-  --eye-y: 38.2vh;
+  --pose-scale: 1;
+  --eye-left-x: 36vw;
+  --eye-right-x: 48.8vw;
+  --eye-y: 38.5vh;
 }
 
 * {
@@ -52,6 +53,34 @@ body {
   cursor: grabbing;
 }
 
+.gaze-layer,
+.pose-frame {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.gaze-layer {
+  transform-origin: 50% 38%;
+  transform:
+    perspective(900px)
+    translate3d(
+      calc(var(--look-x) * 3.4vw),
+      calc(var(--look-y) * 1.8vh),
+      0
+    )
+    rotateY(calc(var(--look-x) * -10deg))
+    rotateX(calc(var(--look-y) * 7deg))
+    rotateZ(calc(var(--look-x) * 1.8deg));
+  will-change: transform;
+}
+
+.pose-frame {
+  transform: scale(var(--pose-scale));
+  transform-origin: 50% 89%;
+  transition: transform 140ms ease-out;
+}
+
 .pet-image {
   position: absolute;
   inset: auto 0 1.3vh;
@@ -69,6 +98,56 @@ body {
   will-change: transform, filter;
 }
 
+.eye-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pet-root[data-runtime="browser"] .eye-layer,
+.pet-root[data-eyes="hidden"] .eye-layer {
+  display: none;
+}
+
+.eye-socket {
+  position: absolute;
+  top: var(--eye-y);
+  width: 5.6vw;
+  height: 4.5vh;
+  overflow: hidden;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.eye-socket-left {
+  left: var(--eye-left-x);
+}
+
+.eye-socket-right {
+  left: var(--eye-right-x);
+}
+
+.iris-tracker {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2.1vw;
+  height: 2.5vw;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 24%, rgb(255 255 255 / 92%) 0 12%, transparent 15%),
+    linear-gradient(180deg, #17346c 0%, #24649f 100%);
+  mix-blend-mode: multiply;
+  opacity: 0.64;
+  transform:
+    translate(-50%, -50%)
+    translate(
+      calc(var(--look-x) * 1.3vw),
+      calc(var(--look-y) * 0.75vh)
+    );
+  will-change: transform;
+}
+
 .ground-shadow {
   position: absolute;
   z-index: -1;
@@ -80,84 +159,6 @@ body {
   background: rgb(31 45 84 / 20%);
   filter: blur(0.65vh);
   transform: scaleX(calc(1 - abs(var(--look-y)) * 0.05));
-}
-
-.eye-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 1;
-  transition: opacity 120ms ease;
-}
-
-.pet-root[data-runtime="browser"] .eye-layer {
-  display: none;
-}
-
-.pupil {
-  position: absolute;
-  z-index: 3;
-  top: var(--eye-y);
-  width: 2.45vw;
-  height: 2.75vw;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 32% 24%, rgb(255 255 255 / 95%) 0 14%, transparent 16%),
-    radial-gradient(circle at 50% 55%, #102859 0 46%, #2768a6 70%, transparent 74%);
-  box-shadow: 0 0 0.5vw rgb(51 145 229 / 34%);
-  mix-blend-mode: multiply;
-  opacity: 0.72;
-  transform:
-    translate(-50%, -50%)
-    translate(
-      calc(var(--look-x) * 1.15vw),
-      calc(var(--look-y) * 0.8vw)
-    );
-  transition: opacity 120ms ease;
-  will-change: transform;
-}
-
-.pupil-left {
-  left: var(--eye-left-x);
-}
-
-.pupil-right {
-  left: var(--eye-right-x);
-}
-
-.eyelid {
-  position: absolute;
-  z-index: 4;
-  top: var(--eye-y);
-  width: 8vw;
-  height: 4.7vw;
-  border-radius: 55% 55% 48% 48%;
-  border-bottom: 0.55vw solid #26396f;
-  background: #f7d1cf;
-  opacity: 0;
-  transform: translate(-50%, -50%) scaleY(0.1);
-}
-
-.eyelid-left {
-  left: var(--eye-left-x);
-}
-
-.eyelid-right {
-  left: var(--eye-right-x);
-}
-
-.pet-root.is-blinking .eyelid {
-  opacity: 0.96;
-  transform: translate(-50%, -50%) scaleY(1);
-  transition: transform 70ms ease, opacity 45ms linear;
-}
-
-.pet-root.is-blinking .pupil {
-  opacity: 0;
-}
-
-.pet-root[data-eyes="hidden"] .eye-layer {
-  opacity: 0;
 }
 
 .speech-bubble {
@@ -279,14 +280,14 @@ body {
 }
 
 @keyframes breathe {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-0.65vh) scale(1.008); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-0.65vh); }
 }
 
 @keyframes happy-hop {
-  0%, 100% { transform: translateY(0) scale(1); }
-  45% { transform: translateY(-2.5vh) scale(1.02, 0.98); }
-  70% { transform: translateY(0.3vh) scale(0.98, 1.02); }
+  0%, 100% { transform: translateY(0); }
+  45% { transform: translateY(-2.5vh); }
+  70% { transform: translateY(0.3vh); }
 }
 
 @keyframes excited-bounce {
@@ -310,14 +311,14 @@ body {
 }
 
 @keyframes surprised-pop {
-  from { transform: translateY(0) scale(0.985, 1.015); }
-  to { transform: translateY(-1.25vh) scale(1.015, 0.985); }
+  from { transform: translateY(0); }
+  to { transform: translateY(-1.25vh); }
 }
 
 @keyframes jump-bounce {
-  0%, 100% { transform: translateY(0) scale(1); }
-  45% { transform: translateY(-2.6vh) scale(1.015, 0.985); }
-  70% { transform: translateY(0.25vh) scale(0.985, 1.015); }
+  0%, 100% { transform: translateY(0); }
+  45% { transform: translateY(-2.6vh); }
+  70% { transform: translateY(0.25vh); }
 }
 
 @keyframes review-focus {
@@ -326,8 +327,8 @@ body {
 }
 
 @keyframes sleepy-breathe {
-  0%, 100% { transform: translateY(0) scale(0.99); }
-  50% { transform: translateY(0.5vh) scale(1.01, 0.985); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(0.5vh); }
 }
 
 @keyframes walk-bob {
@@ -336,8 +337,8 @@ body {
 }
 
 @keyframes drag-wiggle {
-  from { transform: rotate(-4deg) translateY(0); }
-  to { transform: rotate(4deg) translateY(-0.7vh); }
+  from { transform: rotate(-2deg) translateY(0); }
+  to { transform: rotate(2deg) translateY(-0.7vh); }
 }
 
 @keyframes sparkle-pop {

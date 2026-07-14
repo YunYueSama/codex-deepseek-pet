@@ -43,6 +43,15 @@ function pointerVector(point, origin, trackingRadius = 360, deadZone = 28) {
   };
 }
 
+function fixedSizeBounds(position, size) {
+  return {
+    x: Math.round(position.x),
+    y: Math.round(position.y),
+    width: Math.round(size.width),
+    height: Math.round(size.height),
+  };
+}
+
 function clampWindowBounds(bounds, workArea, margin = 8) {
   const minX = workArea.x - bounds.width + margin;
   const maxX = workArea.x + workArea.width - margin;
@@ -62,5 +71,6 @@ module.exports = {
   clamp,
   clampWindowBounds,
   directionFromDelta,
+  fixedSizeBounds,
   pointerVector,
 };

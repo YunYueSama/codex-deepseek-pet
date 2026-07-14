@@ -6,7 +6,7 @@ const image = document.querySelector('#pet-image');
 const bubble = document.querySelector('#speech-bubble');
 const speechText = document.querySelector('#speech-text');
 
-const petApi = window.petApi || {
+const desktopBridge = window.petApi || {
   onPointer: () => {},
   onAction: () => {},
   onWalk: () => {},
@@ -25,72 +25,58 @@ const ASSET_ROOT = '../../assets/pet';
 const POSES = {
   idle: {
     src: `${ASSET_ROOT}/idle.png`,
-    eyes: true,
-    leftEye: 36,
-    rightEye: 48.8,
-    eyeY: 38.5,
+    visualScale: 1,
+    eyes: [36, 48.8, 38.5],
   },
   curious: {
     src: `${ASSET_ROOT}/curious.png`,
-    eyes: true,
-    leftEye: 28.3,
-    rightEye: 39.1,
-    eyeY: 36.1,
+    visualScale: 1.05,
+    eyes: [28.3, 39.1, 36.1],
   },
   shy: {
     src: `${ASSET_ROOT}/shy.png`,
-    eyes: true,
-    leftEye: 33.2,
-    rightEye: 48.5,
-    eyeY: 40.1,
+    visualScale: 0.89,
+    eyes: [33.2, 48.5, 40.1],
   },
   happy: {
     src: `${ASSET_ROOT}/happy.png`,
-    eyes: true,
-    leftEye: 27.4,
-    rightEye: 41.3,
-    eyeY: 45.3,
+    visualScale: 0.92,
+    eyes: [27.4, 41.3, 45.3],
   },
   excited: {
     src: `${ASSET_ROOT}/excited.png`,
-    eyes: true,
-    leftEye: 27.4,
-    rightEye: 41.3,
-    eyeY: 45.3,
+    visualScale: 0.92,
+    eyes: [27.4, 41.3, 45.3],
   },
   wave: {
     src: `${ASSET_ROOT}/wave.png`,
-    eyes: true,
-    leftEye: 32.4,
-    rightEye: 46.8,
-    eyeY: 41.2,
+    visualScale: 0.89,
+    eyes: [32.4, 46.8, 41.2],
   },
   surprised: {
     src: `${ASSET_ROOT}/surprised.png`,
-    eyes: true,
-    leftEye: 34.1,
-    rightEye: 47.9,
-    eyeY: 39.6,
+    visualScale: 0.91,
+    eyes: [34.1, 47.9, 39.6],
   },
   jump: {
     src: `${ASSET_ROOT}/jump.png`,
-    eyes: false,
+    visualScale: 0.84,
   },
   sleepy: {
     src: `${ASSET_ROOT}/sleepy.png`,
-    eyes: false,
+    visualScale: 0.91,
   },
   review: {
     src: `${ASSET_ROOT}/review.png`,
-    eyes: false,
+    visualScale: 0.91,
   },
   'run-left': {
     src: `${ASSET_ROOT}/run-left.png`,
-    eyes: false,
+    visualScale: 0.92,
   },
   'run-right': {
     src: `${ASSET_ROOT}/run-right.png`,
-    eyes: false,
+    visualScale: 0.92,
   },
 };
 
@@ -154,12 +140,14 @@ function setPose(name) {
     image.src = pose.src;
   }
   root.dataset.pose = name;
+  document.documentElement.style.setProperty('--pose-scale', pose.visualScale);
   root.dataset.eyes = pose.eyes ? 'visible' : 'hidden';
 
   if (pose.eyes) {
-    document.documentElement.style.setProperty('--eye-left-x', `${pose.leftEye}vw`);
-    document.documentElement.style.setProperty('--eye-right-x', `${pose.rightEye}vw`);
-    document.documentElement.style.setProperty('--eye-y', `${pose.eyeY}vh`);
+    const [leftEye, rightEye, eyeY] = pose.eyes;
+    document.documentElement.style.setProperty('--eye-left-x', `${leftEye}vw`);
+    document.documentElement.style.setProperty('--eye-right-x', `${rightEye}vw`);
+    document.documentElement.style.setProperty('--eye-y', `${eyeY}vh`);
   }
 }
 
@@ -232,20 +220,9 @@ function scheduleRandomAction() {
   }, delay);
 }
 
-function scheduleBlink() {
-  const delay = 2_800 + Math.random() * 4_200;
-  window.setTimeout(() => {
-    if (!state.walking && !state.dragging && POSES[state.pose]?.eyes) {
-      root.classList.add('is-blinking');
-      window.setTimeout(() => root.classList.remove('is-blinking'), 135);
-    }
-    scheduleBlink();
-  }, delay);
-}
-
 function registerInteraction() {
   state.lastInteractionAt = Date.now();
-  petApi.recordInteraction('pointer');
+  desktopBridge.recordInteraction('pointer');
 }
 
 function reactToClick() {
@@ -270,7 +247,7 @@ function animateLook() {
   window.requestAnimationFrame(animateLook);
 }
 
-petApi.onPointer((pointer) => {
+desktopBridge.onPointer((pointer) => {
   state.targetLookX = pointer.direction === 'center' ? 0 : pointer.x;
   state.targetLookY = pointer.direction === 'center' ? 0 : pointer.y;
   root.dataset.gaze = pointer.direction;
@@ -281,12 +258,12 @@ petApi.onPointer((pointer) => {
   }
 });
 
-petApi.onAction((action) => {
+desktopBridge.onAction((action) => {
   state.lastInteractionAt = Date.now();
   performAction(action);
 });
 
-petApi.onWalk(({ moving, direction }) => {
+desktopBridge.onWalk(({ moving, direction }) => {
   state.walking = Boolean(moving);
   root.classList.toggle('is-walking', state.walking);
 
@@ -306,7 +283,7 @@ petApi.onWalk(({ moving, direction }) => {
   }
 });
 
-petApi.onSettings((settings) => {
+desktopBridge.onSettings((settings) => {
   root.dataset.clickThrough = settings.clickThrough ? 'true' : 'false';
 });
 
@@ -342,11 +319,11 @@ shell.addEventListener('pointermove', (event) => {
     root.classList.add('is-dragging');
     setPose('shy');
     showBubble('等等，我的尾巴要打结啦！', 5000);
-    petApi.dragStart({ screenX: pointerDown.screenX, screenY: pointerDown.screenY });
+    desktopBridge.dragStart({ screenX: pointerDown.screenX, screenY: pointerDown.screenY });
   }
 
   if (pointerDown.moved) {
-    petApi.dragMove({ screenX: event.screenX, screenY: event.screenY });
+    desktopBridge.dragMove({ screenX: event.screenX, screenY: event.screenY });
   }
 });
 
@@ -361,7 +338,7 @@ shell.addEventListener('pointerup', (event) => {
   if (didMove) {
     state.dragging = false;
     root.classList.remove('is-dragging');
-    petApi.dragEnd();
+    desktopBridge.dragEnd();
     return;
   }
 
@@ -378,7 +355,7 @@ shell.addEventListener('pointerup', (event) => {
 
 shell.addEventListener('pointercancel', () => {
   if (pointerDown?.moved) {
-    petApi.dragEnd();
+    desktopBridge.dragEnd();
   }
   pointerDown = null;
   state.dragging = false;
@@ -387,7 +364,7 @@ shell.addEventListener('pointercancel', () => {
 
 shell.addEventListener('contextmenu', (event) => {
   event.preventDefault();
-  petApi.showContextMenu();
+  desktopBridge.showContextMenu();
 });
 
 image.addEventListener('error', () => {
@@ -397,7 +374,6 @@ image.addEventListener('error', () => {
 
 setPose('idle');
 showBubble('我不是吃白饭的大肥鱼！', 3800);
-scheduleBlink();
 scheduleRandomAction();
 animateLook();
-petApi.ready();
+desktopBridge.ready();
