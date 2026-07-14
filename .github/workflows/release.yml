@@ -4,12 +4,15 @@ on:
   push:
     tags:
       - "v*"
+    branches:
+      - main
 
 permissions:
   contents: write
 
 jobs:
   release:
+    if: startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[release-retry]')
     runs-on: windows-latest
     timeout-minutes: 30
 
@@ -33,13 +36,14 @@ jobs:
         run: npm test
 
       - name: Build Windows installer
-        run: npm run dist
+        run: npx electron-builder --win nsis --publish never
 
       - name: Create GitHub release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_REF_NAME: ${{ github.ref_name }}
+          RELEASE_REF_TYPE: ${{ github.ref_type }}
         run: |
           $asset = Get-ChildItem -LiteralPath artifacts -Filter "codex-deepseek-pet-Setup-*-x64.exe" |
             Select-Object -First 1
@@ -47,7 +51,20 @@ jobs:
             throw "Windows installer was not generated."
           }
 
-          gh release create $env:RELEASE_TAG $asset.FullName `
-            --title "codex-deepseek-pet $env:RELEASE_TAG" `
-            --generate-notes `
-            --latest
+          $package = Get-Content -LiteralPath package.json -Raw | ConvertFrom-Json
+          $releaseTag = if ($env:RELEASE_REF_TYPE -eq "tag") {
+            $env:RELEASE_REF_NAME
+          } else {
+            "v$($package.version)"
+          }
+
+          gh release view $releaseTag --json tagName *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $releaseTag $asset.FullName --clobber
+          } else {
+            gh release create $releaseTag $asset.FullName `
+              --verify-tag `
+              --title "codex-deepseek-pet $releaseTag" `
+              --generate-notes `
+              --latest
+          }
