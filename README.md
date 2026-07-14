@@ -57,10 +57,10 @@
 F50D4A4877B780B8214FEA6E7980424CB08AA78E95A755FE16F0172B699AA628
 ```
 
-可用 PowerShell 校验：
+可在命令提示符（`cmd.exe`）中校验：
 
-```powershell
-(Get-FileHash .\codex-deepseek-pet-Setup-1.2.0-x64.exe -Algorithm SHA256).Hash
+```cmd
+certutil -hashfile codex-deepseek-pet-Setup-1.2.0-x64.exe SHA256
 ```
 
 ### 安装包与 `npm start` 的区别
@@ -87,7 +87,7 @@ F50D4A4877B780B8214FEA6E7980424CB08AA78E95A755FE16F0172B699AA628
 
 需要 Node.js 20 或更高版本。
 
-```powershell
+```cmd
 npm ci
 npm start
 ```
@@ -96,8 +96,8 @@ npm start
 
 如果 Electron 官方下载源较慢，可临时使用镜像安装二进制：
 
-```powershell
-$env:ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"
+```cmd
+set ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
 node .\node_modules\electron\install.js
 npm start
 ```
@@ -138,13 +138,12 @@ npm start
 
 在仓库根目录运行：
 
-```powershell
-$source = Join-Path $PWD "codex-deepseek-pet"
-$target = Join-Path $env:USERPROFILE ".codex\pets\codex-deepseek-pet"
-
-New-Item -ItemType Directory -Force $target | Out-Null
-Copy-Item (Join-Path $source "pet.json") $target -Force
-Copy-Item (Join-Path $source "spritesheet.webp") $target -Force
+```cmd
+set "SOURCE=%CD%\codex-deepseek-pet"
+set "TARGET=%USERPROFILE%\.codex\pets\codex-deepseek-pet"
+if not exist "%TARGET%" mkdir "%TARGET%"
+copy /Y "%SOURCE%\pet.json" "%TARGET%\pet.json"
+copy /Y "%SOURCE%\spritesheet.webp" "%TARGET%\spritesheet.webp"
 ```
 
 ### 2. 重新生成 v2 宠物包
@@ -171,18 +170,17 @@ Copy-Item (Join-Path $source "spritesheet.webp") $target -Force
 
 ### 3. 手动复制其他位置的宠物包
 
-如果你已经拿到了通过检查的 `pet.json` 和 `spritesheet.webp`，可以用 PowerShell 复制：
+如果你已经拿到了通过检查的 `pet.json` 和 `spritesheet.webp`，可以用命令提示符复制：
 
-```powershell
-$source = "D:\path\to\codex-deepseek-pet-package"
-$target = Join-Path $env:USERPROFILE ".codex\pets\codex-deepseek-pet"
-
-New-Item -ItemType Directory -Force $target | Out-Null
-Copy-Item (Join-Path $source "pet.json") $target -Force
-Copy-Item (Join-Path $source "spritesheet.webp") $target -Force
+```cmd
+set "SOURCE=D:\path\to\codex-deepseek-pet-package"
+set "TARGET=%USERPROFILE%\.codex\pets\codex-deepseek-pet"
+if not exist "%TARGET%" mkdir "%TARGET%"
+copy /Y "%SOURCE%\pet.json" "%TARGET%\pet.json"
+copy /Y "%SOURCE%\spritesheet.webp" "%TARGET%\spritesheet.webp"
 ```
 
-请把 `$source` 改成实际宠物包目录。不要把 `.env`、密钥或其他私人文件复制进去。
+请把 `SOURCE` 改成实际宠物包目录。不要把 `.env`、密钥或其他私人文件复制进去。
 
 ### 4. 在设置中选择
 
@@ -202,7 +200,7 @@ Copy-Item (Join-Path $source "spritesheet.webp") $target -Force
 
 ## 构建 Windows 安装包
 
-```powershell
+```cmd
 npm ci
 npm run dist
 ```
@@ -213,15 +211,15 @@ npm run dist
 
 如 GitHub 下载较慢，可在打包前设置镜像：
 
-```powershell
-$env:ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"
-$env:ELECTRON_BUILDER_BINARIES_MIRROR="https://npmmirror.com/mirrors/electron-builder-binaries/"
+```cmd
+set ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
+set ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/
 npm run dist
 ```
 
 ## 开发检查
 
-```powershell
+```cmd
 npm run check
 npm test
 ```
