@@ -22,41 +22,39 @@ const desktopBridge = window.petApi || {
 root.dataset.runtime = window.petApi ? 'desktop' : 'browser';
 
 const ASSET_ROOT = '../../assets/pet';
+const LOOK_FRAME_COUNT = 16;
+const LOOK_FRAMES = Array.from(
+  { length: LOOK_FRAME_COUNT },
+  (_, index) => `${ASSET_ROOT}/look/look-${String(index).padStart(2, '0')}.png`,
+);
 const POSES = {
   idle: {
     src: `${ASSET_ROOT}/idle.png`,
     visualScale: 1,
-    eyes: [36, 48.8, 38.5],
   },
   curious: {
     src: `${ASSET_ROOT}/curious.png`,
     visualScale: 1.05,
-    eyes: [28.3, 39.1, 36.1],
   },
   shy: {
     src: `${ASSET_ROOT}/shy.png`,
     visualScale: 0.89,
-    eyes: [33.2, 48.5, 40.1],
   },
   happy: {
     src: `${ASSET_ROOT}/happy.png`,
     visualScale: 0.92,
-    eyes: [27.4, 41.3, 45.3],
   },
   excited: {
     src: `${ASSET_ROOT}/excited.png`,
     visualScale: 0.92,
-    eyes: [27.4, 41.3, 45.3],
   },
   wave: {
     src: `${ASSET_ROOT}/wave.png`,
     visualScale: 0.89,
-    eyes: [32.4, 46.8, 41.2],
   },
   surprised: {
     src: `${ASSET_ROOT}/surprised.png`,
     visualScale: 0.91,
-    eyes: [34.1, 47.9, 39.6],
   },
   jump: {
     src: `${ASSET_ROOT}/jump.png`,
@@ -117,37 +115,52 @@ const CLICK_ACTIONS = [
 
 const state = {
   pose: 'idle',
+  imageKey: '',
   action: 'idle',
   walking: false,
   dragging: false,
   sleeping: false,
   actionUntil: 0,
   lastInteractionAt: Date.now(),
-  targetLookX: 0,
-  targetLookY: 0,
-  lookX: 0,
-  lookY: 0,
+  lookIndex: null,
   bubbleTimer: null,
   actionTimer: null,
   clickTimer: null,
   lastClickAt: 0,
 };
 
+function setImage(key, src) {
+  if (state.imageKey === key) {
+    return;
+  }
+
+  state.imageKey = key;
+  image.src = src;
+}
+
 function setPose(name) {
   const pose = POSES[name] || POSES.idle;
-  if (state.pose !== name) {
-    state.pose = name;
-    image.src = pose.src;
-  }
+  state.pose = name;
+  setImage(`pose:${name}`, pose.src);
   root.dataset.pose = name;
+  delete root.dataset.lookFrame;
   document.documentElement.style.setProperty('--pose-scale', pose.visualScale);
-  root.dataset.eyes = pose.eyes ? 'visible' : 'hidden';
+}
 
-  if (pose.eyes) {
-    const [leftEye, rightEye, eyeY] = pose.eyes;
-    document.documentElement.style.setProperty('--eye-left-x', `${leftEye}vw`);
-    document.documentElement.style.setProperty('--eye-right-x', `${rightEye}vw`);
-    document.documentElement.style.setProperty('--eye-y', `${eyeY}vh`);
+function setLookFrame(index) {
+  const normalizedIndex = ((index % LOOK_FRAME_COUNT) + LOOK_FRAME_COUNT) % LOOK_FRAME_COUNT;
+  state.pose = 'idle';
+  setImage(`look:${normalizedIndex}`, LOOK_FRAMES[normalizedIndex]);
+  root.dataset.pose = 'idle';
+  root.dataset.lookFrame = String(normalizedIndex);
+  document.documentElement.style.setProperty('--pose-scale', 1);
+}
+
+function renderIdleLook() {
+  if (Number.isInteger(state.lookIndex)) {
+    setLookFrame(state.lookIndex);
+  } else {
+    setPose('idle');
   }
 }
 
@@ -182,7 +195,7 @@ function returnToIdle() {
   state.actionUntil = 0;
   clearActionClasses();
   root.classList.add('action-idle');
-  setPose('idle');
+  renderIdleLook();
 }
 
 function performAction({ name = 'idle', message = '', duration = 2600 } = {}) {
@@ -239,24 +252,58 @@ function reactToDoubleClick() {
   });
 }
 
-function animateLook() {
-  state.lookX += (state.targetLookX - state.lookX) * 0.14;
-  state.lookY += (state.targetLookY - state.lookY) * 0.14;
-  document.documentElement.style.setProperty('--look-x', state.lookX.toFixed(4));
-  document.documentElement.style.setProperty('--look-y', state.lookY.toFixed(4));
-  window.requestAnimationFrame(animateLook);
+function lookIndexFromPointer(pointer) {
+  if (Number.isInteger(pointer.lookIndex)
+    && pointer.lookIndex >= 0
+    && pointer.lookIndex < LOOK_FRAME_COUNT) {
+    return pointer.lookIndex;
+  }
+
+  if (pointer.direction === 'center') {
+    return null;
+  }
+
+  const angle = Math.atan2(pointer.x, -pointer.y);
+  const normalizedAngle = (angle + Math.PI * 2) % (Math.PI * 2);
+  return Math.round(normalizedAngle / (Math.PI * 2 / LOOK_FRAME_COUNT)) % LOOK_FRAME_COUNT;
 }
 
-desktopBridge.onPointer((pointer) => {
-  state.targetLookX = pointer.direction === 'center' ? 0 : pointer.x;
-  state.targetLookY = pointer.direction === 'center' ? 0 : pointer.y;
-  root.dataset.gaze = pointer.direction;
+function handlePointer(pointer) {
+  state.lookIndex = lookIndexFromPointer(pointer);
+  root.dataset.gaze = state.lookIndex === null
+    ? 'center'
+    : `look-${String(state.lookIndex).padStart(2, '0')}`;
+
+  if (state.action === 'idle' && !state.walking && !state.dragging) {
+    renderIdleLook();
+  }
 
   if (state.sleeping && pointer.distance < 125) {
     state.lastInteractionAt = Date.now();
     performAction({ name: 'happy', message: '唔……你回来啦？', duration: 2200 });
   }
-});
+}
+
+desktopBridge.onPointer(handlePointer);
+
+if (!window.petApi) {
+  window.addEventListener('pointermove', (event) => {
+    const bounds = shell.getBoundingClientRect();
+    const dx = event.clientX - (bounds.left + bounds.width * 0.5);
+    const dy = event.clientY - (bounds.top + bounds.height * 0.39);
+    const distance = Math.hypot(dx, dy);
+    handlePointer({
+      direction: distance <= 24 ? 'center' : 'browser',
+      distance,
+      x: distance === 0 ? 0 : dx / distance,
+      y: distance === 0 ? 0 : dy / distance,
+    });
+  });
+
+  window.addEventListener('pointerleave', () => {
+    handlePointer({ direction: 'center', distance: 0, x: 0, y: 0 });
+  });
+}
 
 desktopBridge.onAction((action) => {
   state.lastInteractionAt = Date.now();
@@ -372,8 +419,12 @@ image.addEventListener('error', () => {
   image.src = POSES.idle.src;
 });
 
+for (const src of LOOK_FRAMES) {
+  const preload = new Image();
+  preload.src = src;
+}
+
 setPose('idle');
 showBubble('我不是吃白饭的大肥鱼！', 3800);
 scheduleRandomAction();
-animateLook();
 desktopBridge.ready();

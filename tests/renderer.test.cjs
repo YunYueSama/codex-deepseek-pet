@@ -7,20 +7,18 @@ const test = require('node:test');
 
 const projectRoot = path.join(__dirname, '..');
 
-test('renderer clips tracked irises inside eye sockets and hides them in browser preview', () => {
+test('renderer uses 16 real direction frames without synthetic eye or perspective layers', () => {
   const html = fs.readFileSync(path.join(projectRoot, 'src', 'renderer', 'index.html'), 'utf8');
   const css = fs.readFileSync(path.join(projectRoot, 'src', 'renderer', 'styles.css'), 'utf8');
   const app = fs.readFileSync(path.join(projectRoot, 'src', 'renderer', 'app.js'), 'utf8');
 
   assert.match(html, /data-runtime="browser"/);
-  assert.match(html, /id="gaze-layer"/);
-  assert.match(html, /class="eye-socket eye-socket-left"/);
-  assert.doesNotMatch(html, /class="pupil/);
-  assert.match(css, /\.gaze-layer\s*{/);
-  assert.match(css, /rotateY\(calc\(var\(--look-x\)/);
-  assert.match(css, /\.eye-socket\s*{[^}]*overflow:\s*hidden;/s);
-  assert.match(css, /\.pet-root\[data-runtime="browser"\] \.eye-layer/);
-  assert.doesNotMatch(css, /\.pupil/);
+  assert.doesNotMatch(html, /gaze-layer|eye-layer|eye-socket|iris-tracker|class="pupil/);
+  assert.doesNotMatch(css, /--look-[xy]|perspective\(|rotate[XYZ]\(|skew\(|iris|eye-socket/);
+  assert.match(app, /const LOOK_FRAME_COUNT = 16;/);
+  assert.match(app, /look-\$\{String\(index\)\.padStart\(2, '0'\)\}\.png/);
+  assert.match(app, /state\.action === 'idle' && !state\.walking && !state\.dragging/);
+  assert.doesNotMatch(app, /targetLook|iris|eye-left|eye-right|eye-y/);
   assert.match(app, /const desktopBridge = window\.petApi \|\|/);
   assert.doesNotMatch(app, /^const petApi\b/m);
   assert.doesNotMatch(app, /window\.petApi\.(?:onPointer|onAction|onWalk|onSettings|ready)/);

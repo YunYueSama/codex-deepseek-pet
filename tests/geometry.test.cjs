@@ -6,6 +6,7 @@ const {
   clampWindowBounds,
   directionFromDelta,
   fixedSizeBounds,
+  lookFrameFromDelta,
   pointerVector,
 } = require('../src/main/geometry.cjs');
 
@@ -32,11 +33,30 @@ test('directionFromDelta has a stable center dead zone', () => {
   assert.equal(directionFromDelta(40, 0), 'east');
 });
 
+test('lookFrameFromDelta maps all 16 frames clockwise from north', () => {
+  for (let index = 0; index < 16; index += 1) {
+    const angle = index * Math.PI * 2 / 16;
+    const dx = Math.sin(angle) * 100;
+    const dy = -Math.cos(angle) * 100;
+    assert.equal(lookFrameFromDelta(dx, dy), index, `look frame ${index}`);
+  }
+});
+
+test('lookFrameFromDelta keeps the neutral frame inside the dead zone', () => {
+  assert.equal(lookFrameFromDelta(0, 0), null);
+  assert.equal(lookFrameFromDelta(12, -10), null);
+  assert.equal(lookFrameFromDelta(0, -40), 0);
+  assert.equal(lookFrameFromDelta(40, 0), 4);
+  assert.equal(lookFrameFromDelta(0, 40), 8);
+  assert.equal(lookFrameFromDelta(-40, 0), 12);
+});
+
 test('pointerVector normalizes distant coordinates and preserves direction', () => {
   const result = pointerVector({ x: 500, y: 100 }, { x: 100, y: 100 }, 200, 20);
 
   assert.equal(result.direction, 'east');
   assert.equal(result.distance, 400);
+  assert.equal(result.lookIndex, 4);
   assert.equal(result.x, 1);
   assert.equal(result.y, 0);
 });

@@ -11,7 +11,13 @@
     <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
-    <main id="pet-root" class="pet-root" data-pose="idle" data-gaze="center" data-runtime="browser">
+    <main
+      id="pet-root"
+      class="pet-root"
+      data-pose="idle"
+      data-gaze="center"
+      data-runtime="browser"
+    >
       <div id="speech-bubble" class="speech-bubble" role="status" aria-live="polite">
         <span id="speech-text"></span>
       </div>
@@ -22,20 +28,14 @@
 
       <div id="pet-shell" class="pet-shell" role="button" aria-label="codex-deepseek-pet">
         <div class="ground-shadow" aria-hidden="true"></div>
-        <div id="gaze-layer" class="gaze-layer">
-          <div id="pose-frame" class="pose-frame">
-            <img
-              id="pet-image"
-              class="pet-image"
-              src="../../assets/pet/idle.png"
-              alt="蓝色鲸鱼女仆桌面宠物"
-              draggable="false"
-            >
-            <div id="eye-layer" class="eye-layer" aria-hidden="true">
-              <span class="eye-socket eye-socket-left"><i class="iris-tracker"></i></span>
-              <span class="eye-socket eye-socket-right"><i class="iris-tracker"></i></span>
-            </div>
-          </div>
+        <div id="pose-frame" class="pose-frame">
+          <img
+            id="pet-image"
+            class="pet-image"
+            src="../../assets/pet/idle.png"
+            alt="蓝色鲸鱼女仆桌面宠物"
+            draggable="false"
+          >
         </div>
       </div>
     </main>

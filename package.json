@@ -1,6 +1,6 @@
 {
   "name": "codex-deepseek-pet",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "A transparent DeepSeek-inspired desktop companion that watches your cursor and keeps you company.",
   "main": "src/main/main.cjs",
   "author": "YunYueSama",

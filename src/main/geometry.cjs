@@ -11,6 +11,8 @@ const DIRECTIONS = [
   'north-east',
 ];
 
+const LOOK_FRAME_COUNT = 16;
+
 function clamp(value, minimum, maximum) {
   return Math.min(Math.max(value, minimum), maximum);
 }
@@ -27,6 +29,19 @@ function directionFromDelta(dx, dy, deadZone = 28) {
   return DIRECTIONS[index];
 }
 
+function lookFrameFromDelta(dx, dy, deadZone = 28) {
+  const distance = Math.hypot(dx, dy);
+  if (distance <= deadZone) {
+    return null;
+  }
+
+  // atan2 normally starts at screen-right. Swapping the axes makes 0 point
+  // north while preserving clockwise screen coordinates.
+  const angle = Math.atan2(dx, -dy);
+  const normalizedAngle = (angle + Math.PI * 2) % (Math.PI * 2);
+  return Math.round(normalizedAngle / (Math.PI * 2 / LOOK_FRAME_COUNT)) % LOOK_FRAME_COUNT;
+}
+
 function pointerVector(point, origin, trackingRadius = 360, deadZone = 28) {
   const dx = point.x - origin.x;
   const dy = point.y - origin.y;
@@ -38,6 +53,7 @@ function pointerVector(point, origin, trackingRadius = 360, deadZone = 28) {
   return {
     direction: directionFromDelta(dx, dy, deadZone),
     distance: Math.round(distance),
+    lookIndex: lookFrameFromDelta(dx, dy, deadZone),
     x: unitX * strength,
     y: unitY * strength,
   };
@@ -68,9 +84,11 @@ function clampWindowBounds(bounds, workArea, margin = 8) {
 
 module.exports = {
   DIRECTIONS,
+  LOOK_FRAME_COUNT,
   clamp,
   clampWindowBounds,
   directionFromDelta,
   fixedSizeBounds,
+  lookFrameFromDelta,
   pointerVector,
 };

@@ -13,6 +13,7 @@ const {
   Tray,
 } = require('electron');
 const {
+  LOOK_FRAME_COUNT,
   clamp,
   clampWindowBounds,
   fixedSizeBounds,
@@ -28,6 +29,15 @@ const captureArgument = process.argv.find((argument) => argument.startsWith('--c
 const capturePath = captureArgument ? captureArgument.slice('--capture='.length) : null;
 const previewGazeArgument = process.argv.find((argument) => argument.startsWith('--preview-gaze='));
 const previewGaze = previewGazeArgument ? previewGazeArgument.slice('--preview-gaze='.length) : null;
+const previewLookArgument = process.argv.find((argument) => argument.startsWith('--preview-look-index='));
+const parsedPreviewLookIndex = previewLookArgument
+  ? Number.parseInt(previewLookArgument.slice('--preview-look-index='.length), 10)
+  : Number.NaN;
+const previewLookIndex = Number.isInteger(parsedPreviewLookIndex)
+  && parsedPreviewLookIndex >= 0
+  && parsedPreviewLookIndex < LOOK_FRAME_COUNT
+  ? parsedPreviewLookIndex
+  : null;
 const previewActionArgument = process.argv.find((argument) => argument.startsWith('--preview-action='));
 const previewAction = previewActionArgument ? previewActionArgument.slice('--preview-action='.length) : null;
 const testUserDataArgument = process.argv.find((argument) => argument.startsWith('--test-user-data='));
@@ -47,6 +57,23 @@ const PREVIEW_GAZE_VECTORS = {
   west: { x: -1, y: 0 },
   'north-west': { x: -0.707, y: -0.707 },
 };
+
+function vectorForLookIndex(index) {
+  const angle = index * Math.PI * 2 / LOOK_FRAME_COUNT;
+  return {
+    x: Math.sin(angle),
+    y: -Math.cos(angle),
+  };
+}
+
+function previewPointerPayload(vector) {
+  return pointerVector(
+    { x: vector.x * 500, y: vector.y * 500 },
+    { x: 0, y: 0 },
+    420,
+    24,
+  );
+}
 
 let petWindow = null;
 let tray = null;
@@ -318,12 +345,13 @@ function startPointerTracking() {
       return;
     }
 
+    if (previewLookIndex !== null) {
+      send('pet:pointer', previewPointerPayload(vectorForLookIndex(previewLookIndex)));
+      return;
+    }
+
     if (previewGaze && PREVIEW_GAZE_VECTORS[previewGaze]) {
-      send('pet:pointer', {
-        direction: previewGaze,
-        distance: 500,
-        ...PREVIEW_GAZE_VECTORS[previewGaze],
-      });
+      send('pet:pointer', previewPointerPayload(PREVIEW_GAZE_VECTORS[previewGaze]));
       return;
     }
 
