@@ -45,41 +45,28 @@
 
 普通用户推荐安装最新的 [GitHub Release](https://github.com/YunYueSama/codex-deepseek-pet/releases/latest)，不需要安装 Node.js 或下载源码。
 
-1. 下载 `codex-deepseek-pet-Setup-1.2.0-x64.exe`。
+1. 下载 `codex-deepseek-pet-Setup-X.X.X-x64.exe`，其中 `X.X.X` 为当前发布版本号。
 2. 双击安装包，选择安装目录并完成安装。
 3. 从桌面快捷方式或开始菜单中的“codex-deepseek-pet”启动。
 4. 程序启动后会常驻系统托盘；右键宠物或托盘图标可调整自动散步、始终置顶、鼠标穿透、开机启动、尺寸与位置。
 5. 卸载时进入 Windows“设置 → 应用 → 已安装的应用”，找到“codex-deepseek-pet”后选择卸载。
 
-安装包尚未使用商业代码签名证书。Windows SmartScreen 首次运行时可能显示保护提示；请先核对下载来源和 SHA-256，再选择“更多信息 → 仍要运行”：
+安装包尚未使用商业代码签名证书。Windows SmartScreen 首次运行时可能显示保护提示；请先在对应 Release 的发布说明中核对 SHA-256，再选择“更多信息 → 仍要运行”。
 
-```text
-F50D4A4877B780B8214FEA6E7980424CB08AA78E95A755FE16F0172B699AA628
-```
-
-可在命令提示符（`cmd.exe`）中校验：
+可在命令提示符（`cmd.exe`）中计算下载文件的 SHA-256（将 `X.X.X` 替换为实际版本号）：
 
 ```cmd
-certutil -hashfile codex-deepseek-pet-Setup-1.2.0-x64.exe SHA256
+certutil -hashfile codex-deepseek-pet-Setup-X.X.X-x64.exe SHA256
 ```
 
 ### 安装包与 `npm start` 的区别
 
 | 方式 | 适用人群 | 运行环境 | 数据与功能 |
 | --- | --- | --- | --- |
-| 安装 `Setup-1.2.0-x64.exe` | 普通用户 | 已内置 Electron，无需 Node.js | 创建快捷方式和卸载入口，完整支持鼠标注视、托盘、拖拽、散步和动作 |
+| 安装 `codex-deepseek-pet-Setup-X.X.X-x64.exe` | 普通用户 | 已内置 Electron，无需 Node.js | 创建快捷方式和卸载入口，完整支持鼠标注视、托盘、拖拽、散步和动作 |
 | `npm ci && npm start` | 开发、调试和修改源码 | 需要 Node.js 20+ 并安装项目依赖 | 直接运行当前工作区源码，功能与同版本安装包一致，代码修改后可立即重启验证 |
 
 项目启用了单实例锁；在同一用户数据目录下再次启动时，通常会唤醒已有宠物窗口。安装版使用打包时的固定源码；仓库代码更新后，需要下载新版安装包或重新执行 `npm run dist` 才能更新安装版。
-
-### 版本说明
-
-- `1.0.0`：首个可运行版本，完成基础桌宠、托盘、拖拽和鼠标注视。
-- `1.1.0`：缩小默认尺寸、更新初始对白、提升动作素材清晰度并补充 Codex 自定义宠物说明。
-- `1.1.1`：完成项目重命名与安装包标识迁移，兼容旧版设置目录。
-- `1.2.0`：扩展并统一为 12 个动作素材，补充挥手、惊讶、审阅、跳跃和睡眠等状态；这是当前推荐版本。
-
-旧安装包仅用于历史回溯，不建议继续分发。正式 Release 只提供当前通过测试和视觉检查的 `1.2.0`。
 
 ## 源码运行
 
