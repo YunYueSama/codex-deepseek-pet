@@ -1,0 +1,53 @@
+name: Release Windows installer
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run checks
+        run: npm run check
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build Windows installer
+        run: npm run dist
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $asset = Get-ChildItem -LiteralPath artifacts -Filter "codex-deepseek-pet-Setup-*-x64.exe" |
+            Select-Object -First 1
+          if (-not $asset) {
+            throw "Windows installer was not generated."
+          }
+
+          gh release create $env:RELEASE_TAG $asset.FullName `
+            --title "codex-deepseek-pet $env:RELEASE_TAG" `
+            --generate-notes `
+            --latest
