@@ -2,6 +2,8 @@ node_modules/
 release/
 dist/
 artifacts/
+/Whale-Companion-*-portable.exe
+/codex-deepseek-pet-Setup-*.exe
 coverage/
 tmp/
 *.log
@@ -11,6 +13,8 @@ tmp/
 .DS_Store
 Thumbs.db
 docs/qa-*.png
+docs/size-settings-preview.png
+docs/visual-walk-contact.png
 
 # Local editor settings
 .idea/

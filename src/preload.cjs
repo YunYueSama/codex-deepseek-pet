@@ -1,22 +1,22 @@
 'use strict';
-
 const { contextBridge, ipcRenderer } = require('electron');
-
-function subscribe(channel, callback) {
-  const listener = (_event, payload) => callback(payload);
-  ipcRenderer.on(channel, listener);
+const subscribe = (channel, callback) => {
+  const listener = (_e, value) => callback(value); ipcRenderer.on(channel, listener);
   return () => ipcRenderer.removeListener(channel, listener);
-}
-
+};
 contextBridge.exposeInMainWorld('petApi', {
-  onPointer: (callback) => subscribe('pet:pointer', callback),
-  onAction: (callback) => subscribe('pet:action', callback),
-  onWalk: (callback) => subscribe('pet:walk', callback),
-  onSettings: (callback) => subscribe('pet:settings', callback),
   ready: () => ipcRenderer.send('pet:ready'),
-  showContextMenu: () => ipcRenderer.send('pet:context-menu'),
-  dragStart: (point) => ipcRenderer.send('pet:drag-start', point),
-  dragMove: (point) => ipcRenderer.send('pet:drag-move', point),
-  dragEnd: () => ipcRenderer.send('pet:drag-end'),
-  recordInteraction: (kind) => ipcRenderer.send('pet:interaction', kind),
+  onState: cb => subscribe('pet:state', cb), onHitPoint: cb => subscribe('pet:hit-point', cb),
+  onKinetics: cb => subscribe('pet:kinetics', cb),
+  onSettings: cb => subscribe('pet:settings', cb), onNotice: cb => subscribe('pet:notice', cb),
+  interact: kind => ipcRenderer.send('pet:interact', kind),
+  drag: (phase, point) => ipcRenderer.send('pet:drag', { phase, point }),
+  hit: value => ipcRenderer.send('pet:hit', value), open: () => ipcRenderer.send('pet:open'), menu: () => ipcRenderer.send('pet:menu'),
+  settings: () => ipcRenderer.invoke('companion:settings'), save: value => ipcRenderer.invoke('companion:save', value),
+  scale: value => ipcRenderer.invoke('companion:scale', value),
+  mode: (mode, minutes) => ipcRenderer.invoke('companion:mode', { mode, minutes }),
+  chat: value => ipcRenderer.invoke('companion:chat', value), cancel: () => ipcRenderer.send('companion:cancel'),
+  clear: () => ipcRenderer.invoke('companion:clear'), capture: () => ipcRenderer.invoke('companion:capture'),
+  discardCapture: () => ipcRenderer.send('companion:discard'), sources: () => ipcRenderer.invoke('companion:sources'),
+  exportPet: () => ipcRenderer.invoke('companion:export'),
 });

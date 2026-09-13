@@ -5,7 +5,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const electronPath = require('electron');
+const packagedPath = process.env.PET_SMOKE_EXE;
+const electronPath = packagedPath || require('electron');
 const projectRoot = path.join(__dirname, '..');
 const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'codex-deepseek-pet-smoke-'));
 const capturePath = path.join(temporaryRoot, 'capture.png');
@@ -24,10 +25,8 @@ function readPngSize(filePath) {
 }
 
 const child = spawn(electronPath, [
-  projectRoot,
+  ...(packagedPath ? [] : [projectRoot]),
   `--capture=${capturePath}`,
-  '--preview-gaze=south-east',
-  '--preview-action=happy',
   `--test-user-data=${userDataPath}`,
 ], {
   cwd: projectRoot,
@@ -41,7 +40,7 @@ child.stderr.on('data', (chunk) => { output += chunk; });
 
 const timeout = setTimeout(() => {
   child.kill();
-}, 20_000);
+}, packagedPath ? 60_000 : 20_000);
 
 child.on('error', (error) => {
   clearTimeout(timeout);

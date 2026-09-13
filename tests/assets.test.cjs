@@ -1,66 +1,16 @@
 'use strict';
-
-const assert = require('node:assert/strict');
-const crypto = require('node:crypto');
-const fs = require('node:fs');
-const path = require('node:path');
-const test = require('node:test');
-
-const ASSET_NAMES = [
-  'idle',
-  'curious',
-  'shy',
-  'happy',
-  'excited',
-  'wave',
-  'surprised',
-  'jump',
-  'sleepy',
-  'review',
-  'run-left',
-  'run-right',
-];
-
-function readPngHeader(filePath) {
-  const buffer = fs.readFileSync(filePath);
-  const pngSignature = '89504e470d0a1a0a';
-
-  assert.equal(buffer.subarray(0, 8).toString('hex'), pngSignature);
-  assert.equal(buffer.subarray(12, 16).toString('ascii'), 'IHDR');
-
-  return {
-    width: buffer.readUInt32BE(16),
-    height: buffer.readUInt32BE(20),
-    colorType: buffer.readUInt8(25),
-  };
-}
-
-test('all runtime poses provide native-size transparent PNG assets', () => {
-  for (const name of ASSET_NAMES) {
-    const filePath = path.join(__dirname, '..', 'assets', 'pet', `${name}.png`);
-    assert.ok(fs.existsSync(filePath), `missing pose asset: ${name}`);
-
-    const metadata = readPngHeader(filePath);
-    assert.ok(metadata.width >= 280, `${name} is too narrow: ${metadata.width}px`);
-    assert.ok(metadata.height >= 400, `${name} is too short: ${metadata.height}px`);
-    assert.ok([4, 6].includes(metadata.colorType), `${name} has no PNG alpha channel`);
-  }
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),test=require('node:test');
+const {PNG}=require('pngjs');const sharp=require('sharp');const root=path.join(__dirname,'..');
+for(const name of ['actions','expressions','motion-idle','motion-walk'])test(`${name} atlas has 16 populated true-alpha cells`,()=>{
+ const png=PNG.sync.read(fs.readFileSync(path.join(root,'assets/whale',name+'.png')));assert.equal(png.width,2048);assert.equal(png.height,2048);
+ for(let cell=0;cell<16;cell++){let opaque=0,zero=0;for(let y=0;y<512;y++)for(let x=0;x<512;x++){
+ const a=png.data[((Math.floor(cell/4)*512+y)*2048+(cell%4)*512+x)*4+3];if(a>200)opaque++;if(a===0)zero++;
+ if(x<10||y<10||x>501||y>501)assert.equal(a,0,`${name} cell ${cell} boundary`);
+ }assert.ok(opaque>10000,`${name} cell ${cell} visible`);assert.ok(zero>20000,`${name} cell ${cell} transparent`);}
 });
-
-test('all 16 clockwise look frames are transparent, high-resolution, and distinct', () => {
-  const hashes = new Set();
-
-  for (let index = 0; index < 16; index += 1) {
-    const name = `look-${String(index).padStart(2, '0')}.png`;
-    const filePath = path.join(__dirname, '..', 'assets', 'pet', 'look', name);
-    assert.ok(fs.existsSync(filePath), `missing look asset: ${name}`);
-
-    const metadata = readPngHeader(filePath);
-    assert.equal(metadata.width, 768, `${name} has the wrong width`);
-    assert.equal(metadata.height, 832, `${name} has the wrong height`);
-    assert.ok([4, 6].includes(metadata.colorType), `${name} has no PNG alpha channel`);
-    hashes.add(crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex'));
-  }
-
-  assert.equal(hashes.size, 16, 'look frames must not contain duplicated files');
+test('Codex desktop and web exports use distinct dimensions and valid manifest',async()=>{
+ const dir=path.join(root,'codex-deepseek-pet');const manifest=JSON.parse(fs.readFileSync(path.join(dir,'pet.json')));
+ assert.equal(manifest.spriteVersionNumber,2);assert.equal(manifest.spritesheetPath,'spritesheet.webp');
+ const desktop=await sharp(path.join(dir,'spritesheet.webp')).metadata(),web=await sharp(path.join(dir,'spritesheet-web.webp')).metadata();
+ assert.equal(desktop.width,1536);assert.equal(desktop.height,2288);assert.equal(desktop.hasAlpha,true);assert.equal(web.height,1872);
 });

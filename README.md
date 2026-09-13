@@ -1,237 +1,119 @@
-# [**codex-deepseek-pet**](https://github.com/YunYueSama/codex-deepseek-pet)
+<div align="center">
 
-一只会在桌面陪你工作的 **DeepSeek 拟人化宠物**。她以蓝发鲸鱼女仆为形象，能读取系统级鼠标位置，在鼠标位于其他应用窗口时依然持续注视，并按 22.5° 间隔切换 16 张真实转向立绘，让头部、面部和身体一起看向鼠标。
+# 大肥鱼 🐋
 
-![codex-deepseek-pet 核心灵感来源](assets/你这吃白饭的蓝色大肥鱼.png)
+**饭要好好吃，问题也要慢慢嚼。**
 
-这张“我不是大肥鱼……”插画是项目的核心灵感来源；桌宠的角色形象、对白语气和鲸鱼主题均由此延伸。
+一只聪明、嘴硬、贪吃的蓝色鲸鱼娘，陪你工作、聊天，也陪你摸一会儿鱼。
 
-## 运行效果
+Windows 桌宠 · 60 FPS 渲染 · 窗口边缘互动 · 自定义 AI 聊天
 
-![codex-deepseek-pet 运行预览](docs/preview.png)
+[认识她](#她叫大肥鱼) · [看看效果](#她会做什么) · [带她回家](#带她回家) · [角色设定](docs/角色设定.md)
 
-### 全方向鼠标注视
+<img src="docs/preview-v2.png" alt="大肥鱼的陪伴面板：聊天、喂食与一起专注" width="920">
 
-宠物使用系统级鼠标坐标，即使鼠标位于其他应用窗口，也会继续看向对应方向。运行时直接使用 `000°` 到 `337.5°` 的 16 张完整透明立绘，不使用 CSS `rotate`、`skew`、透视拉伸或额外瞳孔叠层伪造方向。
+</div>
 
-![16 个顺时针真实转向](docs/gaze-16-directions.png)
+## 她叫大肥鱼
 
-| 看向左上 | 看向右下 |
-| :---: | :---: |
-| <img src="docs/gaze-north-west.png" alt="宠物看向左上" width="300"> | <img src="docs/gaze-south-east.png" alt="宠物看向右下" width="300"> |
+“我不是大肥鱼……”
 
-### 动作与表情设计
+嘴上小声抗议，眼睛已经在看你手里的零食了。
 
-全部运行时姿势都使用透明背景，并保持蓝色渐变长发、鲸鱼尾巴、深蓝白色女仆装、金色裙摆装饰和围裙鲸鱼图案一致。
+她爱吃饭，也把 token 当作脑力口粮。遇到难题会认真想，被夸会偷偷得意；你忙的时候，她也知道安静待着。贪吃是她的性格，饭碗不是她的固定装备。
 
-| 待机 | 思考 | 开心 | 害羞 |
-| :---: | :---: | :---: | :---: |
-| <img src="assets/pet/idle.png" alt="待机动作" width="150"> | <img src="assets/pet/curious.png" alt="思考动作" width="150"> | <img src="assets/pet/happy.png" alt="开心动作" width="150"> | <img src="assets/pet/shy.png" alt="害羞动作" width="150"> |
-| **兴奋** | **挥手** | **惊讶** | **审阅** |
-| <img src="assets/pet/excited.png" alt="兴奋动作" width="150"> | <img src="assets/pet/wave.png" alt="挥手动作" width="150"> | <img src="assets/pet/surprised.png" alt="惊讶动作" width="150"> | <img src="assets/pet/review.png" alt="审阅动作" width="150"> |
-| **跳跃** | **睡眠** | **向左跑** | **向右跑** |
-| <img src="assets/pet/jump.png" alt="跳跃动作" width="150"> | <img src="assets/pet/sleepy.png" alt="睡眠动作" width="150"> | <img src="assets/pet/run-left.png" alt="向左跑动作" width="150"> | <img src="assets/pet/run-right.png" alt="向右跑动作" width="150"> |
+项目灵感来自社区图片「你这吃白饭的蓝色大肥鱼」。这是一次围绕 DeepSeek 鲸鱼娘的社区二创，不是 DeepSeek 官方产品。
 
-## 功能
+<details>
+<summary>最初的灵感，从这张图开始</summary>
 
-- 全方向鼠标注视：中心死区使用中立立绘，外围按 22.5° 间隔映射到 16 个顺时针真实转向帧。
-- 丰富动作：呼吸、眨眼、歪头、害羞、开心、兴奋、挥手、惊讶、审阅、蹦跳、午睡、拖拽挣扎和随机对白。
-- 自动散步：在当前显示器工作区左右行走，自动切换左右跑步姿势。
-- 桌面交互：单击回应、双击庆祝、拖拽移动、右键打开菜单。
-- 系统托盘：自动散步、始终置顶、鼠标穿透、开机启动、尺寸和位置控制。
-- 多显示器：支持负坐标显示器，并在显示器插拔或分辨率变化后保留可见区域。
-- 统一高清动作素材：12 个动作入口均达到当前窗口的原生显示尺寸；开心与兴奋使用同批清晰笑脸姿势并由不同动画区分，害羞和审阅取自同一套高清动作源。
-- 本地运行：无联网请求、无遥测；鼠标坐标只用于本机动画，不会保存或上传。
+<img src="assets/你这吃白饭的蓝色大肥鱼.png" alt="社区灵感图：你这吃白饭的蓝色大肥鱼" width="560">
 
-## 安装 Windows 发行版
+</details>
 
-普通用户推荐安装最新的 [GitHub Release](https://github.com/YunYueSama/codex-deepseek-pet/releases/latest)，不需要安装 Node.js 或下载源码。
+## 她会做什么
 
-1. 下载 `codex-deepseek-pet-Setup-X.X.X-x64.exe`，其中 `X.X.X` 为当前发布版本号。
-2. 双击安装包，选择安装目录并完成安装。
-3. 从桌面快捷方式或开始菜单中的“codex-deepseek-pet”启动。
-4. 程序启动后会常驻系统托盘；右键宠物或托盘图标可调整自动散步、始终置顶、鼠标穿透、开机启动、尺寸与位置。
-5. 卸载时进入 Windows“设置 → 应用 → 已安装的应用”，找到“codex-deepseek-pet”后选择卸载。
+**在桌面上陪你。** 拖起来会晃一晃，松手后落下、压扁，再弹回来。她能站在可见窗口的顶边，跟着窗口移动；窗口关掉或最小化后，就落回桌面。
 
-安装包尚未使用商业代码签名证书。Windows SmartScreen 首次运行时可能显示保护提示；请先在对应 Release 的发布说明中核对 SHA-256，再选择“更多信息 → 仍要运行”。
+**有自己的小动作。** 眨眼、走路、挥手、跳舞、偷吃 token、打哈欠、蜷起来睡觉，还有鼓腮、害羞、思考和小得意。整套素材由 112 个高清原帧组成。
 
-可在命令提示符（`cmd.exe`）中计算下载文件的 SHA-256（将 `X.X.X` 替换为实际版本号）：
+<img src="docs/motion-preview.webp" alt="待机、走路、吃 token、挥手、跳跃、跳舞、偷吃和睡觉的动画预览" width="768">
 
-```cmd
-certutil -hashfile codex-deepseek-pet-Setup-X.X.X-x64.exe SHA256
-```
+<details>
+<summary>再看一眼她的表情和落地回弹</summary>
 
-### 安装包与 `npm start` 的区别
+<img src="docs/all-actions-contact.png" alt="大肥鱼的动作与表情合集" width="1000">
 
-| 方式 | 适用人群 | 运行环境 | 数据与功能 |
-| --- | --- | --- | --- |
-| 安装 `codex-deepseek-pet-Setup-X.X.X-x64.exe` | 普通用户 | 已内置 Electron，无需 Node.js | 创建快捷方式和卸载入口，完整支持鼠标注视、托盘、拖拽、散步和动作 |
-| `npm ci && npm start` | 开发、调试和修改源码 | 需要 Node.js 20+ 并安装项目依赖 | 直接运行当前工作区源码，功能与同版本安装包一致，代码修改后可立即重启验证 |
+<img src="docs/landing-preview.webp" alt="大肥鱼落地时的压缩与回弹" width="300">
 
-项目启用了单实例锁；在同一用户数据目录下再次启动时，通常会唤醒已有宠物窗口。安装版使用打包时的固定源码；仓库代码更新后，需要下载新版安装包或重新执行 `npm run dist` 才能更新安装版。
+<img src="docs/bubble-preview.png" alt="透明桌宠与清晰的对话气泡" width="240">
 
-## 源码运行
+</details>
 
-本项目是完全本地运行的 Electron 桌宠，不调用 OpenAI API；运行、测试和安装均不需要 `OPENAI_API_KEY`。`.env` 已被 Git 忽略，不要把任何密钥提交到仓库。
+**聊聊天，一起专注。** 接入 DeepSeek 或兼容 OpenAI 格式的本地服务，就能和她聊天。也可以不联网，摸摸、喂食、开一个专注计时，或者玩一局接口粮小游戏。
 
-需要 Node.js 20 或更高版本。
+**按你的习惯相处。** 待机少一点表演、眨眼多一点自然间隔，随机小动作也会留出安静时间。 大小支持 0–100% 调整，能安静陪伴、暂时隐藏或开启鼠标穿透。你可以写下相处约定；画面分享由你选择是否开启。
 
-```cmd
+**也能去 Codex 串门。** 在设置中导出外观宠物包，或者使用仓库里的 [Codex 素材包](codex-deepseek-pet)。导出的只是外观，聊天和桌面互动属于独立程序。
+
+## 她的样子
+
+圆脸、大眼睛、蓝色长发、鲸尾，还有一身深蓝白色的小裙子。我们希望她看起来软乎乎，性格却不是只会点头。
+
+<img src="design/character-sheet.png" alt="大肥鱼角色设计图与表情研究" width="1000">
+
+想了解她的性格、说话方式和造型约定，可以看 [完整角色设定](docs/角色设定.md)。设计图是造型参考，实际运行效果以上面的截图和动画为准。
+
+## 带她回家
+
+当前分支是 **2.1 桌面陪伴版**，适用于 Windows x64。
+
+[Releases](https://github.com/YunYueSama/codex-deepseek-pet/releases) 中的历史安装包可能尚未包含本页展示的新功能。体验当前分支，可以在安装 Node.js 20+ 后运行：
+
+```bash
+git clone https://github.com/YunYueSama/codex-deepseek-pet.git
+cd codex-deepseek-pet
 npm ci
 npm start
 ```
 
-> 直接用普通浏览器打开 `src/renderer/index.html` 时可以预览页面范围内的 16 方向转向，但无法读取浏览器窗口外的系统鼠标，也不会启用桌面拖拽、托盘和窗口控制。请使用 `npm start` 体验完整桌宠功能。
+想生成自己的免安装 EXE 或安装包，执行 `npm run dist`，文件会出现在 `artifacts/`。已经拿到免安装版的朋友，直接双击运行即可，不需要 Node.js。
 
-如果 Electron 官方下载源较慢，可临时使用镜像安装二进制：
+### 几个小动作
 
-```cmd
-set ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
-node .\node_modules\electron\install.js
-npm start
-```
-
-## 操作
-
-| 操作 | 效果 |
+| 你来做 | 她会回应 |
 | --- | --- |
-| 移动鼠标 | 头部、面部和身体切换到对应的 16 方向完整立绘 |
-| 单击宠物 | 随机回应和表情动作 |
-| 双击宠物 | 触发开心蹦跳 |
-| 按住拖动 | 移动到任意屏幕位置 |
-| 右键宠物 | 打开完整控制菜单 |
-| `Ctrl+Alt+P` | 开关鼠标穿透；穿透时仍可从托盘恢复 |
-| 单击托盘图标 | 显示或隐藏宠物 |
+| 单击 / 空格 | 摸摸 |
+| 双击 / 回车 | 打开陪伴面板 |
+| 按住拖动 | 拎起来，松手落下 |
+| F | 喂一口 token |
+| 右键 / 托盘图标 | 打开控制菜单 |
+| Ctrl + Alt + P | 切换鼠标穿透 |
 
-设置会保存在 Electron 的用户数据目录中，重新启动后仍然有效。
+大小调到 0% 会隐藏角色；点击托盘图标，打开设置就能调回来。
 
-## 导入 ChatGPT / Codex 自定义宠物
+### 想和她聊聊天
 
-> 以下步骤已按 Windows 版 Codex `26.707.8168.0` 的实际界面核对。部分版本仍会显示 ChatGPT 名称；升级后入口文字可能略有变化。
+在「习惯与设置」填入服务地址、模型名称和自己的密钥。例如 DeepSeek 地址可用 `https://api.deepseek.com/v1`；本地服务可用 `http://127.0.0.1:1234/v1`，模型名称按你的服务填写。
 
-### 先理解两种格式
+密钥不需要发给任何人。聊天使用你所配置服务的额度；喂食和小游戏中的 token 是虚构口粮，不会消耗模型额度。
 
-本项目根目录运行的是独立 Electron 桌宠。`assets/pet/*.png` 是它的动作图，**不能直接复制到自定义宠物目录**。Codex 自定义宠物使用 v2 精灵表，每只宠物至少需要：
+## 关于陪伴，也关于分寸
 
-```text
-%USERPROFILE%\.codex\pets\codex-deepseek-pet\
-├─ pet.json
-└─ spritesheet.webp
-```
+- 基础桌宠互动可以离线使用。聊天会发送对话和保存的相处约定；聊天历史退出后清空，设置保存在本机，密钥由系统加密保存。
+- 画面分享默认关闭。手动分享先预览，再发送；自动观察需单独开启，并可能产生接口费用。看图还需要支持图片的模型。
+- 应用感知在本机判断前台程序类别，不代表她自动读懂了网页。她会回应，不会擅自执行电脑操作。
 
-其中 `spritesheet.webp` 必须是 `1536x2288` 的 8 列 11 行精灵表，单格为 `192x208`；前 9 行是标准动作，最后 2 行是 16 个顺时针注视方向。`pet.json` 必须声明 `spriteVersionNumber: 2`。
+## 还在慢慢长大
 
-本仓库已经提供通过完整检查的可导入包：[codex-deepseek-pet](codex-deepseek-pet)。它包含全部 9 行标准动作和 16 个顺时针注视方向。
+当前以 60 FPS 为渲染目标，本机全动作短时测试约为 60 FPS。她仍是序列帧动画，部分表情采用关键姿势切换，并不是每秒 60 张不同原画，也还没有完整骨骼动画。
 
-### 1. 直接导入仓库中的宠物包
+更自然的动作衔接、更轻的内存占用、流式聊天与语音，以及更多屏幕环境下的稳定表现，都是值得继续打磨的方向。Codex 外观包在不同宿主版本中的表现也欢迎反馈。
 
-在仓库根目录运行：
+如果她在你的电脑上出现穿窗、抖动、动作不自然，欢迎带上系统缩放比例、操作步骤和截图到 [Issues](https://github.com/YunYueSama/codex-deepseek-pet/issues) 告诉我们。也欢迎分享你想看到的动作、台词和互动点子。
 
-```cmd
-set "SOURCE=%CD%\codex-deepseek-pet"
-set "TARGET=%USERPROFILE%\.codex\pets\codex-deepseek-pet"
-if not exist "%TARGET%" mkdir "%TARGET%"
-copy /Y "%SOURCE%\pet.json" "%TARGET%\pet.json"
-copy /Y "%SOURCE%\spritesheet.webp" "%TARGET%\spritesheet.webp"
-```
+想一起动手：[开发指南](docs/开发指南.md) · [动画与窗口互动](docs/动画与窗口物理.md) · [素材制作说明](design/生成说明.md)
 
-### 2. 重新生成 v2 宠物包
+---
 
-在 Codex 中打开本仓库，然后发送下面这段任务。内置 `hatch-pet` 技能会以本项目角色图为参考，生成动作、执行透明边缘和方向检查，并把通过检查的文件安装到自定义宠物目录：
-
-```text
-使用 hatch-pet 技能，将本仓库 assets/pet 下的角色素材制作成名为“蓝色大肥鱼”的 Codex v2 自定义宠物。
-保持蓝发、鲸鱼尾巴、深蓝白色女仆装和围裙鲸鱼图案一致；动作清晰、完整且不裁切。
-必须包含全部 9 行标准动作和 16 个顺时针注视方向，完成视觉检查后安装到 ~/.codex/pets/codex-deepseek-pet。
-```
-
-生成完成后，目标目录中的清单应类似：
-
-```json
-{
-  "id": "codex-deepseek-pet",
-  "displayName": "蓝色大肥鱼",
-  "description": "我不是吃白饭的大肥鱼！",
-  "spriteVersionNumber": 2,
-  "spritesheetPath": "spritesheet.webp"
-}
-```
-
-### 3. 手动复制其他位置的宠物包
-
-如果你已经拿到了通过检查的 `pet.json` 和 `spritesheet.webp`，可以用命令提示符复制：
-
-```cmd
-set "SOURCE=D:\path\to\codex-deepseek-pet-package"
-set "TARGET=%USERPROFILE%\.codex\pets\codex-deepseek-pet"
-if not exist "%TARGET%" mkdir "%TARGET%"
-copy /Y "%SOURCE%\pet.json" "%TARGET%\pet.json"
-copy /Y "%SOURCE%\spritesheet.webp" "%TARGET%\spritesheet.webp"
-```
-
-请把 `SOURCE` 改成实际宠物包目录。不要把 `.env`、密钥或其他私人文件复制进去。
-
-### 4. 在设置中选择
-
-1. 打开 ChatGPT / Codex 桌面版设置。
-2. 进入“个性化”或“宠物”页面。
-3. 在“自定义宠物”区域点击“打开文件夹”，确认目录为 `%USERPROFILE%\.codex\pets`。
-4. 返回设置页，点击刷新按钮。
-5. 找到“蓝色大肥鱼”，点击“选择”；没有立即出现时，完全退出并重新启动桌面版。
-
-### 常见问题
-
-- 找不到宠物：确认目录层级是 `pets\codex-deepseek-pet\pet.json`，不要多套一层压缩包目录。
-- 显示加载失败：检查 JSON 语法、`spritesheetPath` 文件名和 `spriteVersionNumber: 2`。
-- 只有单张 PNG：这不是可导入包，需要先按第 1 步生成 v2 精灵表。
-- 注视方向错误：v2 的 `000` 代表向上，不是正面；应重新运行方向检查，不能只改清单。
-- 仍然没有刷新按钮：重启桌面版后再次进入宠物设置。
-
-## 构建 Windows 安装包
-
-```cmd
-npm ci
-npm run dist
-```
-
-安装包输出到 `artifacts/`。当前构建目标为 Windows x64 NSIS 安装程序，支持选择安装目录并创建桌面快捷方式。
-
-项目未附带商业代码签名证书，因此自行构建的安装包会显示为“未签名”，首次运行时 Windows SmartScreen 可能要求手动确认。发布正式版本时应使用受信任的 Windows 代码签名证书。
-
-如 GitHub 下载较慢，可在打包前设置镜像：
-
-```cmd
-set ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
-set ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/
-npm run dist
-```
-
-## 开发检查
-
-```cmd
-npm run check
-npm test
-npm run test:electron
-```
-
-16 方向角度映射、中心死区、方向素材完整性、固定窗口尺寸和设置校验均有自动化测试。`npm run test:electron` 会使用隔离的临时用户目录真正启动 Electron，并验证渲染脚本完成 preload 握手和截图。运行时采用 Electron 安全隔离：渲染层不启用 Node.js，只通过受限的 preload API 与主进程通信。
-
-## 项目结构
-
-```text
-assets/pet/          透明动作素材与 16 张真实转向立绘
-build/               Windows 应用图标
-docs/                运行预览
-scripts/             图标构建与 Electron 冒烟测试
-src/main/            窗口、托盘、全局鼠标和散步逻辑
-src/renderer/        桌宠画面、身体转向与动作状态机
-src/preload.cjs      安全 IPC 桥接
-tests/               Node.js 自动化测试
-task_plan.md         中文任务计划
-findings.md          中文调研记录
-progress.md          中文进度记录
-```
-
-## 许可
-
-程序代码使用 [MIT License](LICENSE)。角色图片不包含在 MIT 授权范围内，详见 [图片素材说明](ASSET_LICENSE.md)。
+代码使用 [MIT License](LICENSE)。角色与参考图片不随代码授予额外使用权，详见 [素材说明](ASSET_LICENSE.md)；本地字体使用 SIL Open Font License。感谢社区创作者带来的灵感。若你是参考图片的权利人，希望补充署名或调整使用方式，欢迎联系维护者。

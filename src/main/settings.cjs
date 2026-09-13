@@ -10,10 +10,20 @@ const DEFAULT_SETTINGS = Object.freeze({
   startAtLogin: false,
   scale: 1,
   position: null,
+  environment: true,
+  windowEdges: true,
+  quietFullscreen: true,
+  reducedMotion: false,
+  baseUrl: 'https://api.deepseek.com/v1',
+  model: '',
+  memory: '',
+  vision: false,
+  autoVision: false,
 });
 
 function sanitizeSettings(value = {}) {
-  const scale = [0.8, 1, 1.2].includes(value.scale) ? value.scale : 1;
+  value = value && typeof value === 'object' ? value : {};
+  const scale = typeof value.scale === 'number' && Number.isFinite(value.scale) ? Math.round(Math.max(0, Math.min(1, value.scale)) * 100) / 100 : 1;
   const position = value.position
     && Number.isFinite(value.position.x)
     && Number.isFinite(value.position.y)
@@ -27,6 +37,15 @@ function sanitizeSettings(value = {}) {
     startAtLogin: value.startAtLogin === true,
     scale,
     position,
+    environment: value.environment !== false,
+    windowEdges: value.windowEdges !== false,
+    quietFullscreen: value.quietFullscreen !== false,
+    reducedMotion: value.reducedMotion === true,
+    baseUrl: typeof value.baseUrl === 'string' ? value.baseUrl.slice(0, 500) : DEFAULT_SETTINGS.baseUrl,
+    model: typeof value.model === 'string' ? value.model.slice(0, 120) : '',
+    memory: typeof value.memory === 'string' ? value.memory.slice(0, 2000) : '',
+    vision: value.vision === true,
+    autoVision: value.vision === true && value.autoVision === true,
   };
 }
 
