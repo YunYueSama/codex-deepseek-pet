@@ -68,7 +68,13 @@ Windows 桌宠 · 60 FPS 渲染 · 窗口边缘互动 · 自定义 AI 聊天
 
 当前分支是 **2.1 桌面陪伴版**，适用于 Windows x64。
 
-[Releases](https://github.com/YunYueSama/codex-deepseek-pet/releases) 中的历史安装包可能尚未包含本页展示的新功能。体验当前分支，可以在安装 Node.js 20+ 后运行：
+**直接下载，双击运行，不需要 Node.js：**
+
+- [免安装版 EXE](https://github.com/YunYueSama/codex-deepseek-pet/releases/download/v2.1.0/Whale-Companion-2.1.0-portable.exe)：解锁一只随时可以带走的大肥鱼。
+- [Windows 安装包](https://github.com/YunYueSama/codex-deepseek-pet/releases/download/v2.1.0/codex-deepseek-pet-Setup-2.1.0-x64.exe)：选择安装位置并创建快捷方式。
+- [版本说明与历史下载](https://github.com/YunYueSama/codex-deepseek-pet/releases)。升级前请从托盘退出旧版桌宠。
+
+想从源码运行，可以在安装 Node.js 20+ 后执行：
 
 ```bash
 git clone https://github.com/YunYueSama/codex-deepseek-pet.git
