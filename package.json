@@ -4,7 +4,7 @@
   "description": "大肥鱼：聪明贪吃、有分寸的桌面伙伴",
   "main": "src/main/main.cjs",
   "author": "YunYueSama",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "private": false,
   "engines": {
     "node": ">=20"
