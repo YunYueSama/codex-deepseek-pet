@@ -1,0 +1,29 @@
+{
+  "version": 5,
+  "cell": 512,
+  "columns": 4,
+  "actions": 32,
+  "gaze": 0,
+  "motion": {
+    "idle": 16,
+    "walk": 32,
+    "eat": 16,
+    "wave": 16,
+    "jump": 16,
+    "dance": 16,
+    "sneak": 16,
+    "sleep": 16,
+    "turn": 8
+  },
+  "rows": [
+    6,
+    8,
+    8,
+    4,
+    5,
+    8,
+    6,
+    6,
+    6
+  ]
+}

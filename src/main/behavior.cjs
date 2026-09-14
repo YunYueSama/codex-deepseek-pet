@@ -1,6 +1,8 @@
 'use strict';
+const {clips}=require('../renderer/motion.js');
 
 const ACTIONS = Object.freeze({
+  'stop-left':[0],'stop-right':[0],wake:[0],
   drag:[14],fall:[14],land:[0],
   shift:[0],settle:[0],breathe:[0],
   idle: [0, 1, 0], think: [2, 2, 3], proud: [4, 4, 6], happy: [5, 5, 10], hungry: [6, 6, 7],
@@ -33,6 +35,8 @@ class Companion {
     if (!ACTIONS[action] || (this.now() < this.until && priority < this.priority)) return false;
     // 相同事件连续到来不重置动画时间，避免连点或探针重复报告造成抽动。
     if(action===this.action&&this.now()<this.until&&priority===this.priority)return false;
+    // 有限动作的占用时间与动画一致，避免画面已回待机却仍被动作锁住数秒。
+    const c=clips[action];if(c&&!c.loop&&!c.hold)duration=c.times.reduce((a,b)=>a+b,0);
     this.action = action; this.message = message; this.priority = priority;
     this.started = this.now(); this.until = this.started + duration; this.revision++;
     if(priority>0)this.nextIdle=this.until+18000+this.random()*14000;
@@ -68,7 +72,7 @@ class Companion {
       return;
     }
     if (this.away && idleSeconds < 5) {
-      this.away = false; this.until = 0; this.play('wave', '回来啦？……刚好醒了。', 3500, 50); return;
+      this.away = false; this.until = 0; this.play('wake', '回来啦？……刚好醒了。', 3500, 50); return;
     }
     if (this.mode !== 'company' || fullscreen || this.chatBusy || this.now()<this.contextAfter) return;
     const lines = {
@@ -90,7 +94,7 @@ class Companion {
       this.focusUntil = 0; this.mode = 'company'; this.focusCount++;
       this.play('stretch', '这一段完成了，伸个懒腰再继续？', 5500, 70);
     }
-    if (now >= this.until && !this.chatBusy && this.action !== 'idle' && !(this.away && this.action === 'sleep')) this.play('idle', '', 0, 0);
+    if (now >= this.until && !this.chatBusy && this.action !== 'idle' && !(this.away && this.action === 'sleep')) this.play(['sleep','curl'].includes(this.action)?'wake':'idle', '', 0, 0);
     if (now >= this.nextIdle && !this.locked && !this.away && !this.chatBusy && this.mode === 'company' && now >= this.until) {
       // 日常以无台词的身体调整为主。饥饿/哼歌必须有对应状态，大动作不随机硬插入。
       const expressive=now>=this.nextExpressive?(this.fullness<35?'hungry':this.category==='media'?'hum':null):null;

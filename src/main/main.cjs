@@ -201,9 +201,9 @@ function registerIpc() {
     fs.cpSync(path.join(root, 'codex-deepseek-pet'), destination, { recursive: true, errorOnExist: true }); return destination;
   });
 }
-function stopWalk() {
+function stopWalk(settle=false) {
   walkRemainder=0;
-  if (target !== null || lastWalkDirection) { target = null; lastWalkDirection = null; if (['left', 'right'].includes(brain.action)) { brain.until = 0; brain.play('idle', '', 0, 0); } }
+  if (target !== null || lastWalkDirection) { target = null; lastWalkDirection = null; if (['left', 'right'].includes(brain.action)) { const direction=brain.action;brain.until = 0; brain.play(settle?`stop-${direction}`:'idle', '', 0, settle?1:0); } }
 }
 function physicalTick(dt) {
   const b=pet.getBounds(),area=screen.getDisplayMatching(b).workArea;
@@ -250,15 +250,20 @@ function tick() {
     if (target === null) {
       const span=160*settings.scale;
       const left=Math.max(b.x-span,support?support.left-b.width/2+28:area.x),right=Math.min(b.x+span,support?support.right-b.width/2-28:area.x+area.width-b.width);
-      target=Math.round(left+Math.random()*Math.max(1,right-left));
+      if(right-left<24*settings.scale){nextWalk=now+30000;return;}
+      target=Math.round(left+Math.random()*(right-left));
+      if(Math.abs(target-b.x)<18*settings.scale){target=null;nextWalk=now+15000;return;}
     }
-    const delta = target - b.x, distance = Math.min(Math.abs(delta),55*settings.scale*dt+walkRemainder);
+    const delta = target - b.x,direction = delta < 0 ? 'left' : 'right';
+    if (lastWalkDirection !== direction) { if(!brain.play(direction, '', 30000, 1)){stopWalk();return;} lastWalkDirection = direction; }
+    // 转身时不滑行，随后缓起步，接近目标时减速收步。
+    const startup=Math.max(0,Math.min(1,(now-brain.started-600)/300));
+    const braking=Math.min(1,Math.max(.2,Math.abs(delta)/(24*settings.scale)));
+    const distance = Math.min(Math.abs(delta),55*settings.scale*startup*braking*dt+walkRemainder);
     const step = Math.sign(delta)*Math.floor(distance);walkRemainder=distance-Math.abs(step);
     pet.setBounds(fixedSizeBounds({ x: b.x + step, y: b.y }, size()), false);
     if(support)support.anchorX+=step;
-    const direction = delta < 0 ? 'left' : 'right';
-    if (lastWalkDirection !== direction) { brain.play(direction, '', 30000, 1); lastWalkDirection = direction; }
-    if (Math.abs(delta) <= Math.abs(step)) { stopWalk(); nextWalk = now + 60000 + Math.random() * 50000; savePosition(); }
+    if (Math.abs(delta) <= Math.abs(step)) { stopWalk(true); nextWalk = now + 60000 + Math.random() * 50000; savePosition(); }
   }
   if (settings.autoVision && settings.vision && !full && !locked && !controller && !drag && brain.mode === 'company' && now > autoVisionAt && lastForeign.handle && powerMonitor.getSystemIdleTime() < 60) {
     autoVisionAt = now + 120000;

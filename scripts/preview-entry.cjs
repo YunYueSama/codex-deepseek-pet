@@ -13,15 +13,21 @@ app.whenReady().then(async()=>{
    return Buffer.from(data.split(',')[1],'base64');
   };
   const names=['idle','right','eat','wave','jump','dance','sneak','sleep'],frames=[];
-  for(let n=0;n<64;n++){
+  for(let n=0;n<128;n++){
    const tiles=[];
-   for(let i=0;i<names.length;i++)tiles.push({input:await sharp(await capture(names[i],n*100)).resize(192,192).png().toBuffer(),left:i%4*192,top:Math.floor(i/4)*192});
+   for(let i=0;i<names.length;i++)tiles.push({input:await sharp(await capture(names[i],n*50)).resize(192,192).png().toBuffer(),left:i%4*192,top:Math.floor(i/4)*192});
    frames.push(await sharp({create:{width:768,height:384,channels:4,background:'#edf1f8'}}).composite(tiles).raw().toBuffer());
   }
-  await sharp(Buffer.concat(frames),{raw:{width:768,height:384*frames.length,channels:4,pageHeight:384}}).webp({quality:85,loop:0,delay:100}).toFile(path.join(__dirname,'../docs/motion-preview.webp'));
+  await sharp(Buffer.concat(frames),{raw:{width:768,height:384*frames.length,channels:4,pageHeight:384}}).webp({quality:90,loop:0,delay:50}).toFile(path.join(__dirname,'../docs/motion-preview.webp'));
   const blink=[];
   for(const [i,t]of [0,5035,5080,5140,5210].entries())blink.push({input:await sharp(await capture('idle',t)).resize(300,300).png().toBuffer(),left:i*300,top:0});
   await sharp({create:{width:1500,height:300,channels:4,background:'#edf1f8'}}).composite(blink).png().toFile(path.join(__dirname,'../artifacts/blink-contact.png'));
+  const motion=require('../src/renderer/motion.js');
+  for(const name of [...names,'stop-right','wake']){
+   const c=motion.clips[name],duration=c.times.reduce((a,b)=>a+b,0),tiles=[],count=name==='right'?32:16;
+   for(let i=0;i<count;i++)tiles.push({input:await sharp(await capture(name,(name==='right'?600:0)+duration*i/count)).resize(192,192).png().toBuffer(),left:i%8*192,top:Math.floor(i/8)*192});
+   await sharp({create:{width:1536,height:Math.ceil(count/8)*192,channels:4,background:'#edf1f8'}}).composite(tiles).png().toFile(path.join(__dirname,`../artifacts/${name}-runtime-contact.png`));
+  }
   console.log('Runtime animation preview and blink contact generated.');
  }catch(e){console.error(e);process.exitCode=1;}finally{window.destroy();app.exit(process.exitCode||0);}
 });

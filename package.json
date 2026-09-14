@@ -1,6 +1,6 @@
 {
   "name": "codex-deepseek-pet",
-  "version": "3.0.0",
+  "version": "3.1.0-preview.1",
   "description": "大肥鱼：聪明贪吃、有分寸的桌面伙伴",
   "main": "src/main/main.cjs",
   "author": "YunYueSama",
@@ -18,7 +18,7 @@
     "test:electron": "node scripts/smoke-electron.cjs",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --win nsis portable",
-    "assets:build": "node scripts/build-rig.cjs && node scripts/build-brand.cjs && node scripts/build-assets.cjs",
+    "assets:build": "node scripts/build-hq.cjs && node scripts/build-brand.cjs && node scripts/build-assets.cjs",
     "assets:brand": "node scripts/build-brand.cjs && node scripts/build-assets.cjs",
     "assets:fonts": "node scripts/build-fonts.cjs",
     "test:integration": "node scripts/integration.cjs"

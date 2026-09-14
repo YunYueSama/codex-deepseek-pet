@@ -32,8 +32,7 @@ app.whenReady().then(async()=>{
  assert.equal(await panel.webContents.executeJavaScript('document.querySelectorAll("#messages .assistant")[1].textContent'),'我在这里，');
  assert.equal(await panel.webContents.executeJavaScript('(async()=> (await api.settings()).value.history.length)()'),2);
  const maskReport=await pet.webContents.executeJavaScript('({bytes:Object.values(masks).reduce((n,a)=>n+a.byteLength,0),pixels:Object.values(images).reduce((n,img)=>n+img.width*img.height,0)})');
- assert.ok(Math.abs(maskReport.bytes-maskReport.pixels/8)<15);console.log('Hit mask memory:',JSON.stringify(maskReport));
- assert.equal(await pet.webContents.executeJavaScript('rig.backend'),'webgl');
+ assert.equal(maskReport.bytes,maskReport.pixels/8);console.log('Hit mask memory:',JSON.stringify(maskReport));
  await panel.webContents.executeJavaScript('document.querySelector("#feed").click()');await sleep(200);
  assert.equal(await pet.webContents.executeJavaScript('state.action'),'eat');
  await panel.webContents.executeJavaScript('document.querySelector("#focus").click()');await sleep(200);
@@ -126,11 +125,11 @@ app.whenReady().then(async()=>{
   await sharp({create:{width:1536,height:Math.ceil(allActions.length/8)*192,channels:4,background:'#edf1f8'}}).composite(allShots).png().toFile(path.join(__dirname,'../docs/all-actions-contact.png'));
   console.log('All-action visual pacing:',JSON.stringify(allReport));
   const shots=[];
-  for(let i=0;i<16;i++){
-   const data=await pet.webContents.executeJavaScript(`ctx.clearRect(0,0,600,600);paint(PetMotion.sample('right',${i*90}));canvas.toDataURL();`);
+  for(let i=0;i<32;i++){
+   const data=await pet.webContents.executeJavaScript(`ctx.clearRect(0,0,600,600);paint(PetMotion.sample('right',${600+i*45}));canvas.toDataURL();`);
    shots.push({input:await sharp(Buffer.from(data.split(',')[1],'base64')).resize(300,300).png().toBuffer(),left:i%4*300,top:Math.floor(i/4)*300});
   }
-  await sharp({create:{width:1200,height:1200,channels:4,background:'#edf1f8'}}).composite(shots).png().toFile(path.join(__dirname,'../docs/visual-walk-contact.png'));
+  await sharp({create:{width:1200,height:2400,channels:4,background:'#edf1f8'}}).composite(shots).png().toFile(path.join(__dirname,'../docs/visual-walk-contact.png'));
  }
  // 跳过启动时 CPU 零基线；短窗采样仅作诊断，不能代替长时间资源验收。
  const sample=()=>app.getAppMetrics().map(m=>({type:m.type,cpu:m.cpu.percentCPUUsage,memoryKB:m.memory.workingSetSize}));
@@ -139,6 +138,6 @@ app.whenReady().then(async()=>{
  pet.hide();panel.hide();
  for(let i=0;i<3;i++){await sleep(2000);metrics.hidden.push(sample());}
  fs.mkdirSync(path.join(__dirname,'../artifacts'),{recursive:true});fs.writeFileSync(path.join(__dirname,'../artifacts/integration-metrics.json'),JSON.stringify(metrics,null,2));
- assert.deepEqual(errors,[]);console.log('Integration passed: atlases, settings, local mock chat, feeding, focus, drag size, game and screenshots.');
+ assert.deepEqual(errors,[]);const marker=process.argv.find(a=>a.startsWith('--integration-complete='));if(marker)fs.writeFileSync(marker.slice('--integration-complete='.length),'{}');console.log('Integration passed: atlases, settings, local mock chat, feeding, focus, drag size, game and screenshots.');
  }catch(e){console.error(e);process.exitCode=1;}finally{fixture?.kill();server.closeAllConnections();server.close();app.once('will-quit',()=>app.exit(process.exitCode||0));app.quit();}
 });

@@ -1,8 +1,10 @@
 'use strict';
 // 每页四个原画，保留足够原生像素；先完整验证全部源图，再替换运行图集。
 const fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('node:child_process'),sharp=require('sharp');
-const root=path.join(__dirname,'..'),source=path.join(root,'design/sources/hq'),out=path.join(root,'assets/whale');
-const groups={idle:4,walk:4,eat:2,wave:2,jump:2,dance:2,sneak:2,sleep:2,actions:4,expressions:4};
+const root=path.join(__dirname,'..'),source=path.join(root,'design/sources/hq-v4'),out=path.join(root,'assets/whale');
+const turnOnly=process.argv.includes('--turn-only');
+const groups=turnOnly?{turn:1,'turn-between':1}:{idle:4,walk:4,eat:2,wave:2,jump:2,dance:2,sneak:2,sleep:2,actions:4,expressions:4,turn:1,
+ 'walk-between':4,'eat-between':2,'wave-between':2,'jump-between':2,'dance-between':2,'sneak-between':2,'sleep-between':2,'turn-between':1};
 const cell=512,clear={r:0,g:0,b:0,alpha:0};
 (async()=>{
  const intermediate=path.join(root,'artifacts/hq');fs.mkdirSync(intermediate,{recursive:true});
@@ -57,22 +59,36 @@ const cell=512,clear={r:0,g:0,b:0,alpha:0};
    }
   }
  }
+ // 中间帧与关键帧共同计算组内尺度，交错播放，不能各自归一化后导致人物忽大忽小。
+ for(const group of Object.keys(frames))if(frames[group+'-between']){
+  const between=frames[group+'-between'];if(between.length!==frames[group].length)throw Error(`In-between count mismatch: ${group}`);
+  frames[group]=frames[group].flatMap((frame,i)=>[frame,between[i]]);delete frames[group+'-between'];
+ }
+ // 根据原画接触姿态校正生成顺序：腾空不能插在屈膝准备中，躺下后不能又突然站起。
+ const flow={jump:[0,11,2,4,13,3,6,7,1,8,9,5,10,12,15,14],
+  sleep:[0,9,8,1,2,3,4,6,11,5,10,7,12,13,14,15],
+  eat:[0,1,2,3,4,5,6,7,8,9,10,11,13,15,12,14],
+  wave:[0,2,4,1,3,5,6,8,9,10,11,13,7,12,15,14],
+  sneak:[0,2,1,6,8,4,10,3,9,7,5,11,12,13,15,14],
+  dance:[0,2,1,4,5,6,8,9,13,15,10,11,3,7,12,14]};
+ for(const [group,order]of Object.entries(flow))if(frames[group])frames[group]=order.map(i=>frames[group][i]);
  const normalized={};
  for(const [group,list]of Object.entries(frames)){
   const scale=420/Math.max(...list.map(f=>Math.max(f.sw,f.sh)));
-  normalized[group]=await Promise.all(list.map(async f=>{
+  normalized[group]=await Promise.all(list.map(async (f,index)=>{
    const width=Math.round(f.sw*scale),height=Math.round(f.sh*scale);
-   const image=await sharp(f.data).resize(width,height,{kernel:'lanczos3'}).png().toBuffer();
+   let pipeline=sharp(f.data);if(group==='turn'&&index>0)pipeline=pipeline.flop();
+   const image=await pipeline.resize(width,height,{kernel:'lanczos3'}).png().toBuffer();
    return sharp({create:{width:cell,height:cell,channels:4,background:clear}}).composite([{input:image,left:Math.round((cell-width)/2),top:476-height}]).png().toBuffer();
   }));
  }
- const atlases={'motion-idle':normalized.idle,'motion-walk':normalized.walk,
+ const atlases=turnOnly?{'motion-turn':normalized.turn}:{'motion-idle':normalized.idle,'motion-walk':normalized.walk,'motion-turn':normalized.turn,
   'motion-basic':[...normalized.idle.slice(0,8),...normalized.walk.slice(0,8),...normalized.eat,...normalized.wave],
   'motion-extra':[...normalized.jump,...normalized.dance,...normalized.sneak,...normalized.sleep],
   actions:normalized.actions,expressions:normalized.expressions};
  for(const [name,list]of Object.entries(atlases)){
-  const columns=list.length===32?8:4;
-  await sharp({create:{width:columns*cell,height:4*cell,channels:4,background:clear}}).composite(list.map((input,i)=>({input,left:i%columns*cell,top:Math.floor(i/columns)*cell}))).png().toFile(path.join(out,`${name}.png`));
+  const columns=['motion-basic','motion-extra'].includes(name)?8:4;
+  await sharp({create:{width:columns*cell,height:Math.ceil(list.length/columns)*cell,channels:4,background:clear}}).composite(list.map((input,i)=>({input,left:i%columns*cell,top:Math.floor(i/columns)*cell}))).png().toFile(path.join(out,`${name}.png`));
  }
  fs.writeFileSync(path.join(intermediate,'compiled.json'),JSON.stringify({cell,frames:evidence},null,2)+'\n');
  console.log(`Compiled all ${evidence.length} HQ original frames, ${cell}px runtime cells.`);
