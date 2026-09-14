@@ -66,12 +66,12 @@ Windows 桌宠 · 60 FPS 渲染 · 窗口边缘互动 · 自定义 AI 聊天
 
 ## 带她回家
 
-当前分支是 **2.2 桌面陪伴版**，适用于 Windows x64。
+当前分支是 **2.3 桌面陪伴版**，适用于 Windows x64。
 
 **直接下载，双击运行，不需要 Node.js：**
 
-- [免安装版 EXE](https://github.com/YunYueSama/codex-deepseek-pet/releases/download/v2.2.0/Whale-Companion-2.2.0-portable.exe)：解锁一只随时可以带走的大肥鱼。
-- [Windows 安装包](https://github.com/YunYueSama/codex-deepseek-pet/releases/download/v2.2.0/codex-deepseek-pet-Setup-2.2.0-x64.exe)：选择安装位置并创建快捷方式。
+- [免安装版 EXE](https://github.com/YunYueSama/codex-deepseek-pet/releases/download/v2.3.0/Whale-Companion-2.3.0-portable.exe)：解锁一只随时可以带走的大肥鱼。
+- [Windows 安装包](https://github.com/YunYueSama/codex-deepseek-pet/releases/download/v2.3.0/codex-deepseek-pet-Setup-2.3.0-x64.exe)：选择安装位置并创建快捷方式。
 - [版本说明与历史下载](https://github.com/YunYueSama/codex-deepseek-pet/releases)。升级前请从托盘退出旧版桌宠。
 
 想从源码运行，可以在安装 Node.js 20+ 后执行：
@@ -111,6 +111,8 @@ npm start
 - 应用感知在本机判断前台程序类别，不代表她自动读懂了网页。她会回应，不会擅自执行电脑操作。
 
 ## 还在慢慢长大
+
+2.3 的大肥鱼会正面看向你了：依据指定设定图重绘默认立绘和独立头像图标，保留低饱和蓝紫发色、微嘟小嘴与一条鲸尾。安静的小调整每隔约 18–32 秒出现一次；饥饿、哼歌等表现则看状态，专注时保持克制。旧的走路、吃饭等原画尚未全部按新标准重画。
 
 当前以 60 FPS 为渲染目标，本机全动作短时测试约为 60 FPS。她仍是序列帧动画，部分表情采用关键姿势切换，并不是每秒 60 张不同原画，也还没有完整骨骼动画。
 

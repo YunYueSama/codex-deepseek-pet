@@ -2,6 +2,7 @@
 
 const ACTIONS = Object.freeze({
   drag:[14],fall:[14],land:[0],
+  shift:[0],settle:[0],breathe:[0],
   idle: [0, 1, 0], think: [2, 2, 3], proud: [4, 4, 6], happy: [5, 5, 10], hungry: [6, 6, 7],
   eat: [6, 7, 7, 5], protest: [8, 8, 4], sad: [9, 9, 0], wave: [10, 10, 0], sleep: [11],
   left: [12], right: [13], surprise: [14, 14, 0], jump: [5, 15, 5],
@@ -21,7 +22,8 @@ class Companion {
     this.now = now; this.random = random;
     this.action = 'idle'; this.priority = 0; this.until = 0; this.started = now();
     this.message = ''; this.revision = 0; this.mode = 'company'; this.focusUntil = 0;
-    this.energy = 80; this.fullness = 55; this.lastDecay = now(); this.nextIdle = now() + 120000;
+    this.energy = 80; this.fullness = 55; this.lastDecay = now(); this.nextIdle = now() + 18000 + this.random()*14000;
+    this.category='other';this.nextExpressive=now()+180000;
     this.recentIdle=[];this.contextAfter=now()+60000;
     this.cooldowns = new Map(); this.locked = false; this.away = false; this.chatBusy = false;
     this.focusCount = 0;
@@ -33,7 +35,7 @@ class Companion {
     if(action===this.action&&this.now()<this.until&&priority===this.priority)return false;
     this.action = action; this.message = message; this.priority = priority;
     this.started = this.now(); this.until = this.started + duration; this.revision++;
-    if(priority>0)this.nextIdle=this.until+120000+this.random()*120000;
+    if(priority>0)this.nextIdle=this.until+18000+this.random()*14000;
     return true;
   }
   interact(kind) {
@@ -57,7 +59,7 @@ class Companion {
     return true;
   }
   context({ idleSeconds = 0, locked = false, fullscreen = false, category = 'other' } = {}) {
-    this.locked = locked;
+    this.locked = locked || fullscreen;this.category=category;
     if (locked) return;
     if (idleSeconds >= 180 && !this.chatBusy) {
       this.away = true;
@@ -90,11 +92,14 @@ class Companion {
     }
     if (now >= this.until && !this.chatBusy && this.action !== 'idle' && !(this.away && this.action === 'sleep')) this.play('idle', '', 0, 0);
     if (now >= this.nextIdle && !this.locked && !this.away && !this.chatBusy && this.mode === 'company' && now >= this.until) {
-      const candidates=['peek','stretch','proud','hungry'].filter(a=>!this.recentIdle.includes(a)&&(a!=='hungry'||this.fullness<35));
-      const action=this.pick(candidates.length?candidates:['idle']);
-      this.play(action,this.random()<.2?this.pick(LINES.idle):'',3800,5);
+      // 日常以无台词的身体调整为主。饥饿/哼歌必须有对应状态，大动作不随机硬插入。
+      const expressive=now>=this.nextExpressive?(this.fullness<35?'hungry':this.category==='media'?'hum':null):null;
+      const candidates=['shift','settle','breathe'].filter(a=>!this.recentIdle.includes(a));
+      const action=expressive||this.pick(candidates.length?candidates:['shift']);
+      this.play(action,'',3200,5);
+      if(expressive)this.nextExpressive=now+300000;
       this.recentIdle=[...this.recentIdle,action].slice(-2);
-      this.nextIdle = now + 120000 + this.random() * 120000;
+      this.nextIdle = this.until + 18000 + this.random() * 14000;
     }
     return this.snapshot();
   }

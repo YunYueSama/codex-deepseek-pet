@@ -5,7 +5,8 @@
  const clip=(atlas,frames,ms,loop=false,hold=false)=>({atlas,frames,times:Array.isArray(ms)?ms:frames.map(()=>ms),loop,hold});
  const clips={
   drag:clip('motion-extra',[4],100,false,true),fall:clip('motion-extra',[5],100,false,true),land:clip('motion-extra',[6,7],[100,900]),
-  idle:clip('motion-idle',[0],1000,true),
+  idle:clip('idle-front',[0],1000,true),
+  shift:clip('idle-front',[0],3200),settle:clip('idle-front',[0],3200),breathe:clip('idle-front',[0],3200),
   right:clip('motion-walk',seq(0,16),90,true),left:clip('motion-walk',seq(0,16),90,true),
   eat:clip('motion-basic',[16,17,18,19,18,19,20,21,20,21,22,23],[150,130,120,140,100,150,130,150,130,160,450,220]),
   wave:clip('motion-basic',[24,25,26,27,28,27,28,29,30,31],120),
@@ -47,10 +48,11 @@
   const spring=reduced?0:Math.exp(-phase*5)*Math.cos(phase*22);
   const squash=action==='land'?.18*spring:0;
   const jumpPhase=Math.max(0,Math.min(1,(elapsed-260)/480));
-  return {atlas,frame,columns:['motion-basic','motion-extra'].includes(atlas)?8:4,flip:action==='left',walking,blink:!reduced&&action==='idle'?blinkAt(elapsed):0,
+  const micro=!reduced&&['shift','settle','breathe'].includes(action)?Math.sin(Math.PI*Math.min(1,Math.max(0,elapsed/3200)))**2:0;
+  return {atlas,frame,columns:atlas==='idle-front'?2:['motion-basic','motion-extra'].includes(atlas)?8:4,flip:action==='left',walking,blink:!reduced&&atlas==='idle-front'?blinkAt(elapsed):0,
    x:0,y:reduced?0:action==='jump'?-Math.sin(jumpPhase*Math.PI)*42:walking?-Math.abs(Math.sin(elapsed/duration*Math.PI*2))*1.5:0,
-   scaleX:1+squash,scaleY:1+breathing*.0025-squash,
-   rotation:!reduced&&['dance','hum'].includes(action)?Math.sin(phase*Math.PI*2)*.022:0,index,duration};
+   scaleX:1+squash+(action==='breathe'?-.008*micro:0),scaleY:1+breathing*.0025-squash+(action==='breathe'?.016:action==='settle'?-.014:0)*micro,
+   rotation:action==='shift'?Math.sin(phase*Math.PI*2/3.2)*micro*.018:!reduced&&['dance','hum'].includes(action)?Math.sin(phase*Math.PI*2)*.022:0,index,duration};
  }
  // 只衔接重心、倾角和形变；原画保持单层实像，避免交叉淡化造成双轮廓。
  function transition(from,to,elapsed,duration=180){

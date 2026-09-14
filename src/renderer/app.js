@@ -14,7 +14,7 @@ function resizeCanvas(){
  ctx.setTransform(pixels/600,0,0,pixels/600,0,0);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';lastDraw='';
 }
 window.addEventListener('resize',resizeCanvas);
-async function loadAssets(){for(const name of ['actions','expressions','motion-basic','motion-extra','motion-idle','motion-walk'])await new Promise((resolve,reject)=>{
+async function loadAssets(){for(const name of ['actions','expressions','motion-basic','motion-extra','idle-front','motion-walk'])await new Promise((resolve,reject)=>{
  const img=new Image();images[name]=img;img.onload=()=>{
   try{
   const surface=document.createElement('canvas');surface.width=img.width;surface.height=img.height;
@@ -39,10 +39,11 @@ function paint(p,alpha=1){
   ctx.save();ctx.beginPath();ctx.rect(-300,-560,600,600);ctx.rect(-30,-110,260,150);ctx.clip('evenodd');sprite(0);ctx.restore();
   ctx.save();ctx.beginPath();ctx.rect(-30,-110,260,150);ctx.clip();sprite(p.frame);ctx.restore();
  }else sprite(p.frame);
- if(p.blink>0){
+ if(p.blink>.35){
   // 只在眼周揭露闭眼原画，身体和头发保持同一张基准图，不做整人叠影。
-  ctx.save();ctx.beginPath();ctx.ellipse(77,-305,31,29,0,0,Math.PI*2);ctx.ellipse(142,-307,17,27,0,0,Math.PI*2);ctx.clip();
-  ctx.beginPath();ctx.rect(42,-338,121,65*p.blink);ctx.clip();sprite(7);ctx.restore();
+  ctx.save();ctx.beginPath();ctx.ellipse(-45,-300,30,25,0,0,Math.PI*2);ctx.ellipse(36,-300,30,25,0,0,Math.PI*2);ctx.clip();
+  // 完整闭眼只持续约 140ms；不逐行擦除眼睛，避免中间态出现白带和双眼线。
+  sprite(1);ctx.restore();
  }
  ctx.restore();
 }

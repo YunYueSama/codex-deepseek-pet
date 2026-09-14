@@ -11,9 +11,21 @@ test('chat prevents walking and idle action until completion',()=>{const {brain,
 test('repeated interaction keeps the animation start and postpones autonomous gestures',()=>{
  const {brain,advance}=setup();brain.interact('pet');const started=brain.started;
  advance(300);brain.interact('pet');assert.equal(brain.started,started);
- advance(10000);brain.tick();assert.equal(brain.action,'idle');assert.ok(brain.nextIdle>brain.now()+100000);
+ advance(10000);brain.tick();assert.equal(brain.action,'idle');assert.ok(brain.nextIdle>brain.now());assert.ok(brain.nextIdle<=brain.until+40000);
 });
 test('autonomous gestures are spaced and do not repeat the last two',()=>{
  const {brain,advance}=setup(),seen=[];
- for(let i=0;i<4;i++){advance(brain.nextIdle-brain.now()+1);brain.tick();assert.ok(!seen.slice(-2).includes(brain.action));seen.push(brain.action);assert.ok(brain.nextIdle-brain.now()>=120000);}
+ for(let i=0;i<4;i++){advance(brain.nextIdle-brain.now()+1);brain.tick();assert.ok(!seen.slice(-2).includes(brain.action));seen.push(brain.action);assert.ok(brain.nextIdle-brain.now()>=21200);assert.equal(brain.message,'');}
+});
+
+test('ten minute company rhythm is active without random emotional performances',()=>{
+ const {brain,advance}=setup();let last=brain.revision;const events=[];
+ for(let i=0;i<600;i++){advance(1000);brain.context({idleSeconds:0});brain.tick();if(last!==brain.revision&&brain.action!=='idle')events.push(brain.action);last=brain.revision;}
+ assert.ok(events.length>=15&&events.length<=30);assert.ok(events.every(a=>['shift','settle','breathe'].includes(a)));
+});
+test('expressive idle needs context and quiet/fullscreen suppresses autonomous motion',()=>{
+ const {brain,advance}=setup();brain.fullness=20;advance(180001);brain.tick();assert.equal(brain.action,'hungry');
+ advance(30000);brain.tick();assert.notEqual(brain.action,'hungry');
+ for(const mode of ['focus','quiet']){brain.setMode(mode,25);advance(60000);brain.tick();assert.equal(brain.action,'idle');}
+ brain.setMode('company');brain.context({fullscreen:true});advance(60000);brain.tick();assert.equal(brain.action,'idle');
 });

@@ -14,7 +14,7 @@ const arg = key => process.argv.find(v => v.startsWith(`--${key}=`))?.slice(key.
 const testMode = Boolean(arg('test-user-data'));
 if (testMode) app.setPath('userData', path.resolve(arg('test-user-data')));
 let pet, panel, tray, store, vault, settings, timer, stopMonitor, quitting = false, locked = false;
-let drag = null, target = null, walkRemainder = 0, nextWalk = Date.now() + 60000, previousTick = Date.now();
+let drag = null, target = null, walkRemainder = 0, nextWalk = Date.now() + 45000, previousTick = Date.now();
 let context = {}, lastForeign = {}, lastPointer = '', lastState = '', lastPoll = 0, lastEnvironment = 0;
 let controller = null, history = [], capture = null, captureAt = 0, autoVisionAt = Date.now() + 120000;
 let ignored = false, pointerInside = false, lastWalkDirection = null;
@@ -258,7 +258,7 @@ function tick() {
     if(support)support.anchorX+=step;
     const direction = delta < 0 ? 'left' : 'right';
     if (lastWalkDirection !== direction) { brain.play(direction, '', 30000, 1); lastWalkDirection = direction; }
-    if (Math.abs(delta) <= Math.abs(step)) { stopWalk(); nextWalk = now + 90000 + Math.random() * 90000; savePosition(); }
+    if (Math.abs(delta) <= Math.abs(step)) { stopWalk(); nextWalk = now + 60000 + Math.random() * 50000; savePosition(); }
   }
   if (settings.autoVision && settings.vision && !full && !locked && !controller && !drag && brain.mode === 'company' && now > autoVisionAt && lastForeign.handle && powerMonitor.getSystemIdleTime() < 60) {
     autoVisionAt = now + 120000;

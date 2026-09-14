@@ -6,7 +6,7 @@ test('walk loops through all sixteen actual frames instead of holding final fram
  assert.equal(sample('right',1440).frame,0);assert.equal(sample('left',95).flip,true);
 });
 test('one-shot has recovery to idle and sleeping has a held final pose',()=>{
- assert.equal(sample('eat',5000).atlas,'motion-idle');assert.ok(sample('eat',5000).frame<16);
+ assert.equal(sample('eat',5000).atlas,'idle-front');assert.ok(sample('eat',5000).frame<16);
  assert.equal(sample('sleep',100000).frame,31);assert.equal(sample('jump',950).frame,7);
 });
 test('sampling is independent of rendering frequency and reduced motion is still',()=>{
@@ -35,7 +35,7 @@ test('idle holds a stable body and blinks briefly at spaced intervals',()=>{
  assert.equal(sample('idle',3000).blink,0);assert.ok(sample('idle',5100).blink>.9);
 });
 test('short gestures settle instead of looping and thinking holds its pose',()=>{
- assert.equal(sample('dance',4000).atlas,'motion-idle');
+ assert.equal(sample('dance',4000).atlas,'idle-front');
  assert.equal(sample('think',1000).frame,sample('think',9000).frame);
 });
 
