@@ -66,12 +66,12 @@ Windows 桌宠 · 60 FPS 渲染 · 窗口边缘互动 · 自定义 AI 聊天
 
 ## 带她回家
 
-当前分支是 **2.1 桌面陪伴版**，适用于 Windows x64。
+当前分支是 **2.2 桌面陪伴版**，适用于 Windows x64。
 
 **直接下载，双击运行，不需要 Node.js：**
 
-- [免安装版 EXE](https://github.com/YunYueSama/codex-deepseek-pet/releases/download/v2.1.0/Whale-Companion-2.1.0-portable.exe)：解锁一只随时可以带走的大肥鱼。
-- [Windows 安装包](https://github.com/YunYueSama/codex-deepseek-pet/releases/download/v2.1.0/codex-deepseek-pet-Setup-2.1.0-x64.exe)：选择安装位置并创建快捷方式。
+- [免安装版 EXE](https://github.com/YunYueSama/codex-deepseek-pet/releases/download/v2.2.0/Whale-Companion-2.2.0-portable.exe)：解锁一只随时可以带走的大肥鱼。
+- [Windows 安装包](https://github.com/YunYueSama/codex-deepseek-pet/releases/download/v2.2.0/codex-deepseek-pet-Setup-2.2.0-x64.exe)：选择安装位置并创建快捷方式。
 - [版本说明与历史下载](https://github.com/YunYueSama/codex-deepseek-pet/releases)。升级前请从托盘退出旧版桌宠。
 
 想从源码运行，可以在安装 Node.js 20+ 后执行：
@@ -114,7 +114,9 @@ npm start
 
 当前以 60 FPS 为渲染目标，本机全动作短时测试约为 60 FPS。她仍是序列帧动画，部分表情采用关键姿势切换，并不是每秒 60 张不同原画，也还没有完整骨骼动画。
 
-更自然的动作衔接、更轻的内存占用、流式聊天与语音，以及更多屏幕环境下的稳定表现，都是值得继续打磨的方向。Codex 外观包在不同宿主版本中的表现也欢迎反馈。
+2.2 加入了逐段显示的聊天回复，点击停止会保留已经看到的文字；动作切换时平滑衔接重心与形变，同时缩小了透明区域检测的内存占用。2.1 安装包不包含这些更新。
+
+更丰富的过渡原画、语音陪伴，以及更多屏幕环境下的稳定表现，仍会继续打磨。Codex 外观包在不同宿主版本中的表现也欢迎反馈。
 
 如果她在你的电脑上出现穿窗、抖动、动作不自然，欢迎带上系统缩放比例、操作步骤和截图到 [Issues](https://github.com/YunYueSama/codex-deepseek-pet/issues) 告诉我们。也欢迎分享你想看到的动作、台词和互动点子。
 

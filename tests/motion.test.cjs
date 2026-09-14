@@ -38,3 +38,12 @@ test('short gestures settle instead of looping and thinking holds its pose',()=>
  assert.equal(sample('dance',4000).atlas,'motion-idle');
  assert.equal(sample('think',1000).frame,sample('think',9000).frame);
 });
+
+test('transitions preserve the outgoing transform then settle on one incoming sprite',()=>{
+ const {transition}=require('../src/renderer/motion.js'),from=sample('jump',480),to=sample('idle',0);
+ const start=transition(from,to,0),mid=transition(from,to,90),end=transition(from,to,180);
+ assert.equal(start.y,from.y);assert.equal(start.atlas,to.atlas);assert.equal(mid.y,(from.y+to.y)/2);assert.deepEqual(end,to);
+ for(const action of Object.keys(clips))for(const t of [0,16,90,179,180]){
+  const p=transition(from,sample(action,500),t);assert.ok(Number.isFinite(p.y)&&p.scaleX>0&&p.scaleY>0);
+ }
+});

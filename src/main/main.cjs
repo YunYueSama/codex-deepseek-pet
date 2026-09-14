@@ -111,14 +111,21 @@ async function captureForeground() {
   if (!source || source.thumbnail.isEmpty()) throw new Error('该窗口暂时无法截取，可能已关闭或最小化。');
   return source.thumbnail.toDataURL();
 }
-async function chat(text, image, automatic = false) {
+async function chat(text, image, automatic = false, requestId = null) {
   if (controller) throw new Error('我还在回复，可以先取消上一条。');
   if (typeof text !== 'string' || !text.trim() || text.length > 8000) throw new Error('请填写 1 到 8000 字的问题。');
   const current = new AbortController(); controller = current; brain.chatBusy = true; stopWalk();
   brain.play('think', automatic ? '' : '让我把这个问题嚼一嚼。', 60000, 90);
   const next = automatic ? [{ role: 'user', content: text }] : [...history, { role: 'user', content: text }];
   try {
-    const answer = await complete({ ...settings, key: vault.get(), messages: next, memory: settings.memory, signal: current.signal, image });
+    let lastDelta = 0;
+    const answer = await complete({ ...settings, key: vault.get(), messages: next, memory: settings.memory, signal: current.signal, image,
+      onDelta: automatic ? undefined : content => {
+        // 合并高频 token 通知，避免 IPC 与页面更新挤占桌宠渲染。
+        if (!current.signal.aborted && Date.now() - lastDelta >= 40) {
+          lastDelta = Date.now(); send(panel, 'companion:delta', { requestId, content });
+        }
+      } });
     if (current.signal.aborted) throw new DOMException('Cancelled', 'AbortError');
     if (!automatic) history = [...next, { role: 'assistant', content: answer }].slice(-20);
     brain.until = 0; brain.play('happy', automatic ? answer.slice(0, 110) : '想好了，打开聊天看看吧。', 5000, 40);
@@ -178,7 +185,8 @@ function registerIpc() {
   handle('companion:chat', async value => {
     const image = value?.attach && settings.vision && Date.now() - captureAt < 120000 ? capture : null;
     if (value?.attach && !image) throw new Error('画面预览已过期，请重新截取。');
-    capture = null; return chat(value?.text, image);
+    const requestId = typeof value?.requestId === 'string' && value.requestId.length <= 80 ? value.requestId : null;
+    capture = null; return chat(value?.text, image, false, requestId);
   });
   ipcMain.on('companion:cancel', e => { if (trusted(e, true)) controller?.abort(); });
   ipcMain.on('companion:discard', e => { if (trusted(e, true)) capture = null; });

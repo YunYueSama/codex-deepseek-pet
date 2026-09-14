@@ -52,5 +52,12 @@
    scaleX:1+squash,scaleY:1+breathing*.0025-squash,
    rotation:!reduced&&['dance','hum'].includes(action)?Math.sin(phase*Math.PI*2)*.022:0,index,duration};
  }
- return {clips,sample,blinkAt};
+ // 只衔接重心、倾角和形变；原画保持单层实像，避免交叉淡化造成双轮廓。
+ function transition(from,to,elapsed,duration=180){
+  if(!from||elapsed>=duration)return to;
+  const t=Math.max(0,elapsed/duration),weight=t*t*(3-2*t),result={...to};
+  for(const key of ['x','y','scaleX','scaleY','rotation'])result[key]=from[key]+(to[key]-from[key])*weight;
+  return result;
+ }
+ return {clips,sample,blinkAt,transition};
 });

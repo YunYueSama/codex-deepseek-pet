@@ -5,6 +5,7 @@ let state={action:'idle',started:Date.now(),until:0,message:''},settings={},poin
 let lastHit=false,lastClick=0,lastFrameAt=0,lastDraw='',nextFrameAt=0;
 let kinetics={vx:0,vy:0},kineticsAt=0,sway=0,stretch=0;
 const images={},masks={};let assetsReady=false,lastPose=null;
+let poseKey='',transitionFrom=null,transitionAt=0;
 // 直接按显示尺寸与屏幕 DPI 绘制，避免固定 600px 画布再次被浏览器缩放。
 function resizeCanvas(){
  const width=300*(settings.scale??1),pixels=Math.max(1,Math.round(width*devicePixelRatio));
@@ -13,14 +14,22 @@ function resizeCanvas(){
  ctx.setTransform(pixels/600,0,0,pixels/600,0,0);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';lastDraw='';
 }
 window.addEventListener('resize',resizeCanvas);
-Promise.all(['actions','expressions','motion-basic','motion-extra','motion-idle','motion-walk'].map(name=>new Promise((resolve,reject)=>{
+async function loadAssets(){for(const name of ['actions','expressions','motion-basic','motion-extra','motion-idle','motion-walk'])await new Promise((resolve,reject)=>{
  const img=new Image();images[name]=img;img.onload=()=>{
+  try{
   const surface=document.createElement('canvas');surface.width=img.width;surface.height=img.height;
   const pixels=surface.getContext('2d',{willReadFrequently:true});pixels.drawImage(img,0,0);
-  const rgba=pixels.getImageData(0,0,img.width,img.height).data,alpha=new Uint8Array(img.width*img.height);
-  for(let i=0;i<alpha.length;i++)alpha[i]=rgba[i*4+3];masks[name]=alpha;resolve();
+  // 命中只需要是否超过阈值，以位图保存；逐条带读取，避免整张 RGBA 拷贝的内存峰值。
+  const alpha=new Uint8Array(Math.ceil(img.width*img.height/8));
+  for(let y=0;y<img.height;y+=64){
+   const rgba=pixels.getImageData(0,y,img.width,Math.min(64,img.height-y)).data;
+   for(let i=0;i<rgba.length/4;i++){const bit=y*img.width+i;if(rgba[i*4+3]>40)alpha[bit>>3]|=1<<(bit&7);}
+  }
+  masks[name]=alpha;surface.width=surface.height=1;resolve();
+  }catch(error){reject(error);}
  };img.onerror=reject;img.src=`../../assets/whale/${name}.png`;
-}))).then(()=>{assetsReady=true;}).catch(()=>{bubble.textContent='角色素材暂时无法加载，可从托盘打开设置。';bubble.classList.add('visible');});
+});}
+loadAssets().then(()=>{assetsReady=true;}).catch(()=>{bubble.textContent='角色素材暂时无法加载，可从托盘打开设置。';bubble.classList.add('visible');});
 function paint(p,alpha=1){
  const img=images[p.atlas],cell=img.width/p.columns;
  ctx.save();ctx.globalAlpha=alpha;ctx.translate(300+p.x,560+p.y);ctx.rotate(p.rotation);ctx.scale((p.flip?-1:1)*p.scaleX,p.scaleY);
@@ -45,13 +54,16 @@ function draw(now){
  const interval=reduced?250:1000/60;
  nextFrameAt+=interval;if(nextFrameAt<now-interval)nextFrameAt=now+interval;
  const dt=Math.min(.1,(now-lastFrameAt)/1000);lastFrameAt=now;
- const pose=PetMotion.sample(state.action,Date.now()-state.started,reduced);
+ let pose=PetMotion.sample(state.action,Date.now()-state.started,reduced);
+ const identity=`${state.action}:${pose.atlas}`;
+ if(identity!==poseKey){poseKey=identity;transitionFrom=lastPose;transitionAt=now;}
  // 鼠标抓取点带动身体，惯性用阻尼追随；释放后缓慢回正，不直接跳回零角度。
  const dragging=state.action==='drag',follow=1-Math.exp(-12*dt);
  if(now-kineticsAt>140)kinetics={vx:0,vy:0};
  sway+=((dragging?-kinetics.vx/4000:0)-sway)*follow;
  stretch+=((dragging?.045+Math.abs(kinetics.vy)/16000:0)-stretch)*follow;
  if(!reduced){pose.rotation+=sway;pose.scaleY+=stretch;pose.scaleX-=stretch*.5;}
+ if(!reduced)pose=PetMotion.transition(transitionFrom,pose,now-transitionAt);
  const key=JSON.stringify(pose);
  if(key!==lastDraw){lastDraw=key;ctx.clearRect(0,0,600,600);
   // 每帧只绘制一个实像；动作过渡不再叠加前后两张角色，以免留下双轮廓残影。
@@ -69,7 +81,7 @@ function updateHit(){
   if(sx>=0&&sx<600&&sy>=0&&sy<600){const img=images[p.atlas],cell=img.width/p.columns;
    const hitFrame=p.walking&&!(sx>=270&&sx<530&&sy>=450)?0:p.frame;
    const px=hitFrame%p.columns*cell+Math.floor(sx/600*cell),py=Math.floor(hitFrame/p.columns)*cell+Math.floor(sy/600*cell);
-   opaque=masks[p.atlas][py*img.width+px]>40;}
+   const bit=py*img.width+px;opaque=Boolean(masks[p.atlas][bit>>3]&(1<<(bit&7)));}
  }
  const hit=Boolean(down||opaque);
  if(hit!==lastHit){lastHit=hit;api?.hit(hit);}

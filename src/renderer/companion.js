@@ -1,6 +1,13 @@
 'use strict';
 const api=window.petApi, $=s=>document.querySelector(s);
 let state={},currentSettings={},busy=false,attached=false,gameTimer=null,gameEnd=0,score=0;
+let activeReply=null;
+api?.onChatDelta(value=>{
+  if(!activeReply||value.requestId!==activeReply.id||typeof value.content!=='string')return;
+  const list=$('#messages'),nearBottom=list.scrollHeight-list.scrollTop-list.clientHeight<80;
+  activeReply.text=value.content;activeReply.node.textContent=value.content;
+  if(nearBottom)activeReply.node.scrollIntoView({block:'end'});
+});
 function notice(text){$('#notice').textContent=text;$('#notice').hidden=!text;}
 function tab(name){if(name!=='play'&&gameTimer)stopGame();document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id===name));document.querySelectorAll('[data-tab]').forEach(e=>e.classList.toggle('selected',e.dataset.tab===name));notice('');}
 document.querySelectorAll('[data-tab]').forEach(e=>e.onclick=()=>tab(e.dataset.tab));
@@ -17,9 +24,10 @@ function message(role,text,error=false){$('#messages .chat-empty')?.remove();con
 function setBusy(value){busy=value;$('#send').disabled=value;$('#cancel').hidden=!value;$('#capture').disabled=value;$('#clear-chat').disabled=value;}
 $('#chat-form').onsubmit=async e=>{e.preventDefault();if(busy||!api)return;const text=$('#prompt').value.trim();if(!text)return;
   message('user',text);const pending=message('assistant','让我想想……');setBusy(true);notice('');
-  try{const result=await api.chat({text,attach:attached});if(!result.ok)throw new Error(result.error);pending.textContent=result.value;$('#prompt').value='';}
-  catch(err){pending.textContent=err.message;pending.classList.add('error');}
-  finally{setBusy(false);removeCapture();}
+  activeReply={id:crypto.randomUUID(),node:pending,text:''};
+  try{const result=await api.chat({text,attach:attached,requestId:activeReply.id});if(!result.ok)throw new Error(result.error);pending.textContent=result.value;if($('#prompt').value.trim()===text)$('#prompt').value='';}
+  catch(err){if(activeReply.text){pending.textContent=activeReply.text;message('assistant',err.message,true);}else{pending.textContent=err.message;pending.classList.add('error');}}
+  finally{activeReply=null;setBusy(false);removeCapture();}
 };
 $('#prompt').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('#chat-form').requestSubmit();}};
 $('#cancel').onclick=()=>api?.cancel();

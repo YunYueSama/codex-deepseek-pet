@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('petApi', {
   ready: () => ipcRenderer.send('pet:ready'),
   onState: cb => subscribe('pet:state', cb), onHitPoint: cb => subscribe('pet:hit-point', cb),
   onKinetics: cb => subscribe('pet:kinetics', cb),
+  onChatDelta: cb => subscribe('companion:delta', cb),
   onSettings: cb => subscribe('pet:settings', cb), onNotice: cb => subscribe('pet:notice', cb),
   interact: kind => ipcRenderer.send('pet:interact', kind),
   drag: (phase, point) => ipcRenderer.send('pet:drag', { phase, point }),

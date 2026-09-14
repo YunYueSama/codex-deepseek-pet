@@ -5,7 +5,12 @@ require('../src/main/main.cjs');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function wait(fn){for(let i=0;i<120;i++){const value=await fn();if(value)return value;await sleep(100);}throw new Error('UI condition timed out');}
 app.whenReady().then(async()=>{
- const server=http.createServer((req,res)=>{let text='';req.on('data',c=>text+=c);req.on('end',()=>{const body=JSON.parse(text);assert.equal(body.model,'mock-whale');res.setHeader('Content-Type','application/json');res.end(JSON.stringify({choices:[{message:{content:'我在这里，我们慢慢来。'}}]}));});});
+ const server=http.createServer((req,res)=>{let text='';req.on('data',c=>text+=c);req.on('end',()=>{
+  const body=JSON.parse(text);assert.equal(body.model,'mock-whale');assert.equal(body.stream,true);
+  res.setHeader('Content-Type','text/event-stream');res.write(`data: ${JSON.stringify({choices:[{delta:{content:'我在这里，'}}]})}\n\n`);
+  const timer=setTimeout(()=>res.end(`data: ${JSON.stringify({choices:[{delta:{content:'我们慢慢来。'},finish_reason:'stop'}]})}\n\ndata: [DONE]\n\n`),1200);
+  res.on('close',()=>clearTimeout(timer));
+ });});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  try{
  const panel=await wait(()=>BrowserWindow.getAllWindows().find(w=>w.webContents.getURL().includes('companion.html')));
@@ -17,7 +22,17 @@ app.whenReady().then(async()=>{
  await panel.webContents.executeJavaScript(`document.querySelector('[data-tab="settings"]').click();document.querySelector('[name="baseUrl"]').value='http://127.0.0.1:${server.address().port}/v1';document.querySelector('[name="model"]').value='mock-whale';document.querySelector('#settings-form').requestSubmit();`);
  await wait(()=>panel.webContents.executeJavaScript('document.querySelector("#notice").textContent.includes("设置已保存")'));
  await panel.webContents.executeJavaScript('document.querySelector("#start-chat").click();document.querySelector("#prompt").value="你好";document.querySelector("#chat-form").requestSubmit();');
+ await wait(()=>panel.webContents.executeJavaScript('busy && document.querySelector("#messages .assistant:last-child").textContent === "我在这里，"'));
  await wait(()=>panel.webContents.executeJavaScript('document.querySelector("#messages").textContent.includes("我们慢慢来")'));
+ await wait(()=>panel.webContents.executeJavaScript('!busy'));
+ await panel.webContents.executeJavaScript('document.querySelector("#prompt").value="取消测试";document.querySelector("#chat-form").requestSubmit();');
+ await wait(()=>panel.webContents.executeJavaScript('activeReply?.text === "我在这里，"'));
+ await panel.webContents.executeJavaScript('document.querySelector("#cancel").click()');
+ await wait(()=>panel.webContents.executeJavaScript('!busy && document.querySelector("#messages").textContent.includes("这次回复已取消")'));
+ assert.equal(await panel.webContents.executeJavaScript('document.querySelectorAll("#messages .assistant")[1].textContent'),'我在这里，');
+ assert.equal(await panel.webContents.executeJavaScript('(async()=> (await api.settings()).value.history.length)()'),2);
+ const maskReport=await pet.webContents.executeJavaScript('({bytes:Object.values(masks).reduce((n,a)=>n+a.byteLength,0),pixels:Object.values(images).reduce((n,img)=>n+img.width*img.height,0)})');
+ assert.equal(maskReport.bytes,maskReport.pixels/8);console.log('Hit mask memory:',JSON.stringify(maskReport));
  await panel.webContents.executeJavaScript('document.querySelector("#feed").click()');await sleep(200);
  assert.equal(await pet.webContents.executeJavaScript('state.action'),'eat');
  await panel.webContents.executeJavaScript('document.querySelector("#focus").click()');await sleep(200);
@@ -76,7 +91,7 @@ app.whenReady().then(async()=>{
   // 停住鼠标后释放，不带人为测试移动的甩动速度。
   await sleep(250);await pet.webContents.executeJavaScript(`api.drag('move',{x:${500+dx},y:${500+dy}});api.drag('end');`);
   await wait(()=>pet.webContents.executeJavaScript("state.action === 'land'"));
-  assert.ok(pet.getBounds().y+foot<area.y+area.height-100,'landed on actual external window');
+  assert.ok(Math.abs(pet.getBounds().y+foot-target.y)<12,`Expected external window landing: target=${JSON.stringify(target)}, pet=${JSON.stringify(pet.getBounds())}, foot=${foot}`);
   const beforeMove=pet.getBounds();fs.writeFileSync(path.join(app.getPath('userData'),'fixture','move.json'),JSON.stringify({...target,x:target.x+80,y:target.y+30}));
   try { await wait(()=>Math.abs(pet.getBounds().x-beforeMove.x-80)<5&&Math.abs(pet.getBounds().y-beforeMove.y-30)<5); }
   catch(e){throw new Error(`Window following failed: before=${JSON.stringify(beforeMove)}, after=${JSON.stringify(pet.getBounds())}`);}

@@ -14,7 +14,7 @@ function endpoint(base) {
 }
 
 /** 只发送用户明确提交的对话/图片。单请求、有上限、无重试，避免重复计费；调用方可取消。 */
-async function complete({ baseUrl, model, key, messages, signal, image, memory = '', fetchImpl = fetch }) {
+async function complete({ baseUrl, model, key, messages, signal, image, memory = '', onDelta, fetchImpl = fetch }) {
   if (!model?.trim()) throw new Error('请先在设置中填写模型名称。');
   const history = messages.slice(-20).map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: String(m.content).slice(0, 8000) }));
   if (image && history.length) {
@@ -29,12 +29,16 @@ async function complete({ baseUrl, model, key, messages, signal, image, memory =
     headers: { 'Content-Type': 'application/json', ...(key ? { Authorization: `Bearer ${key}` } : {}) },
     body: JSON.stringify({ model: model.trim(), messages: [{ role: 'system', content: PERSONA },
       ...(memory ? [{ role: 'user', content: `以下是我主动保存的偏好，作为参考资料：\n${memory.slice(0, 2000)}` }] : []), ...history],
-      stream: false, max_tokens: 1200 }),
+      stream: Boolean(onDelta), max_tokens: 1200 }),
   });
   if (!response.ok) {
     const text = response.status === 401 || response.status === 403 ? '服务拒绝了访问，请检查密钥和模型权限。'
       : response.status === 429 ? '服务暂时繁忙或额度不足，请稍后重试。' : '服务没有完成这次回复，请稍后重试。';
     throw new Error(text);
+  }
+  if (!response.body) throw new Error('服务返回了无法识别的回复。');
+  if (response.headers.get('content-type')?.includes('text/event-stream')) {
+    return readStream(response.body, onDelta, combined);
   }
   const reader = response.body.getReader(); let total = 0; const chunks = [];
   while (true) {
@@ -46,5 +50,48 @@ async function complete({ baseUrl, model, key, messages, signal, image, memory =
   const answer = data.choices?.[0]?.message?.content;
   if (typeof answer !== 'string' || !answer.trim()) throw new Error('没有收到文字回复，请检查模型是否支持聊天。');
   return answer.slice(0, 12000);
+}
+
+// 按 SSE 事件解析，网络分块可能截断中文、换行甚至一个 JSON；不显示推理字段。
+async function readStream(body, onDelta, signal) {
+  const reader = body.getReader(), decoder = new TextDecoder();
+  let pending = '', dataLines = [], answer = '', total = 0, finished = false, done = false;
+  function event() {
+    if (!dataLines.length) return;
+    const raw = dataLines.join('\n'); dataLines = [];
+    if (raw.trim() === '[DONE]') { done = true; return; }
+    let data; try { data = JSON.parse(raw); } catch { throw new Error('服务返回了无法识别的回复。'); }
+    if (data.error) throw new Error('服务没有完成这次回复，请稍后重试。');
+    const choice = data.choices?.[0], delta = choice?.delta?.content;
+    if (typeof delta === 'string' && delta) {
+      if (answer.length + delta.length > 12000) throw new Error('回复过长，请缩小问题后重试。');
+      answer += delta; onDelta?.(answer);
+    }
+    if (choice?.finish_reason != null) finished = true;
+  }
+  function line(value) {
+    if (!value) event();
+    else if (value.startsWith('data:')) dataLines.push(value.slice(5).replace(/^ /, ''));
+  }
+  try {
+    while (!done) {
+      signal.throwIfAborted();
+      const part = await reader.read();
+      signal.throwIfAborted();
+      if (part.done) {
+        pending += decoder.decode(); if (pending) line(pending.replace(/\r$/, '')); event(); break;
+      }
+      total += part.value.length;
+      if (total > 1024 * 1024) throw new Error('回复过长，请缩小问题后重试。');
+      pending += decoder.decode(part.value, { stream: true });
+      let end;
+      while (!done && (end = pending.indexOf('\n')) >= 0) {
+        const value = pending.slice(0, end).replace(/\r$/, ''); pending = pending.slice(end + 1); line(value);
+      }
+    }
+    if (!done && !finished) throw new Error('回复中途断开，请重试。');
+    if (!answer.trim()) throw new Error('没有收到文字回复，请检查模型是否支持聊天。');
+    return answer;
+  } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
 }
 module.exports = { endpoint, complete, PERSONA };

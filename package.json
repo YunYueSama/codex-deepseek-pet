@@ -1,6 +1,6 @@
 {
   "name": "codex-deepseek-pet",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "大肥鱼：聪明贪吃、有分寸的桌面伙伴",
   "main": "src/main/main.cjs",
   "author": "YunYueSama",
