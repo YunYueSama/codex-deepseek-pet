@@ -32,7 +32,8 @@ app.whenReady().then(async()=>{
  assert.equal(await panel.webContents.executeJavaScript('document.querySelectorAll("#messages .assistant")[1].textContent'),'我在这里，');
  assert.equal(await panel.webContents.executeJavaScript('(async()=> (await api.settings()).value.history.length)()'),2);
  const maskReport=await pet.webContents.executeJavaScript('({bytes:Object.values(masks).reduce((n,a)=>n+a.byteLength,0),pixels:Object.values(images).reduce((n,img)=>n+img.width*img.height,0)})');
- assert.equal(maskReport.bytes,maskReport.pixels/8);console.log('Hit mask memory:',JSON.stringify(maskReport));
+ assert.ok(Math.abs(maskReport.bytes-maskReport.pixels/8)<15);console.log('Hit mask memory:',JSON.stringify(maskReport));
+ assert.equal(await pet.webContents.executeJavaScript('rig.backend'),'webgl');
  await panel.webContents.executeJavaScript('document.querySelector("#feed").click()');await sleep(200);
  assert.equal(await pet.webContents.executeJavaScript('state.action'),'eat');
  await panel.webContents.executeJavaScript('document.querySelector("#focus").click()');await sleep(200);

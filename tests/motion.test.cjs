@@ -1,49 +1,37 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const {sample,clips}=require('../src/renderer/motion.js');const sharp=require('sharp');
-test('walk loops through all sixteen actual frames instead of holding final frame',()=>{
- const frames=Array.from({length:16},(_,i)=>sample('right',i*90).frame);assert.equal(new Set(frames).size,16);
- assert.equal(sample('right',1440).frame,0);assert.equal(sample('left',95).flip,true);
+const {sample,clips,transition,ik}=require('../src/renderer/motion.js');
+test('actions turn the torso and coordinate hips and delayed head follow',()=>{
+ assert.equal(sample('idle',1200).turn,0);
+ for(const action of ['left','right']){const p=sample(action,300);assert.equal(p.turn,1);assert.ok(p.headTurn>.5);assert.notEqual(p.hips,0);}
+ for(const action of ['eat','peek','stretch','sleep']){const p=sample(action,1500);assert.ok(p.turn>.48,action);assert.notEqual(p.torso,0,action);}
+ const reach=sample('eat',460);assert.ok(reach.turn>reach.headTurn);
+ const dance=sample('dance',2200);assert.notEqual(dance.hips,0);assert.notEqual(dance.legL,0);
+ const from=sample('idle',0),to=sample('right',300),mid=transition(from,to,110);assert.ok(mid.turn>0&&mid.turn<to.turn);assert.ok(mid.headTurn>0&&mid.headTurn<to.headTurn);
 });
-test('one-shot has recovery to idle and sleeping has a held final pose',()=>{
- assert.equal(sample('eat',5000).atlas,'idle-front');assert.ok(sample('eat',5000).frame<16);
- assert.equal(sample('sleep',100000).frame,31);assert.equal(sample('jump',950).frame,7);
+test('walking has continuous joints and repeats exactly after a full stride',()=>{
+ const poses=Array.from({length:72},(_,i)=>sample('right',i*1000/60));assert.ok(new Set(poses.map(p=>p.legL)).size>60);
+ assert.equal(sample('right',1200).legL,sample('right',0).legL);assert.equal(sample('left',120).flip,true);
+ for(let i=1;i<poses.length;i++)assert.ok(Math.abs(poses[i].legL-poses[i-1].legL)<.3);
 });
-test('sampling is independent of rendering frequency and reduced motion is still',()=>{
- assert.deepEqual(sample('dance',613),sample('dance',613));
- for(const name of Object.keys(clips)){const a=sample(name,0,true),b=sample(name,50,true);assert.deepEqual(a,b);}
+test('all actions use new rig and finite positive transforms at 60Hz',()=>{
+ for(const [action,clip]of Object.entries(clips))for(let t=0;t<clip.duration+500;t+=1000/60){const p=sample(action,t);assert.equal(p.atlas,'rig');for(const value of Object.values(p))if(typeof value==='number')assert.ok(Number.isFinite(value),`${action} ${t}`);assert.ok(p.scaleX>0&&p.scaleY>0);}
 });
-test('motion atlases contain 64 transparent cells with margins',async()=>{
- for(const name of ['motion-basic','motion-extra']){
- const {data,info}=await sharp(path.join(__dirname,'../assets/whale',name+'.png')).raw().toBuffer({resolveWithObject:true});
- assert.equal(info.channels,4);assert.equal(info.width,4096);assert.equal(info.height,2048);
- for(let i=0;i<32;i++){let visible=0;for(let y=0;y<512;y++)for(let x=0;x<512;x++){
- const a=data[((Math.floor(i/8)*512+y)*4096+(i%8)*512+x)*4+3];if(a>200)visible++;
- if(x<12||x>499||y<12||y>499)assert.equal(a,0);
- }assert.ok(visible>3000,`${name} ${i} visible`);}
- }
+test('one shot settles, sleep holds and reduced motion is stable',()=>{
+ assert.equal(sample('eat',5000).action,'idle');assert.equal(sample('sleep',100000).expression,1);
+ for(const action of Object.keys(clips))assert.deepEqual(sample(action,0,true),sample(action,50,true));
 });
-test('runtime has no gaze frame mapping or pointer direction subscription',()=>{
- for(const file of ['src/renderer/app.js','src/preload.cjs','src/main/main.cjs']){
- const source=fs.readFileSync(path.join(__dirname,'..',file),'utf8');assert.doesNotMatch(source,/lookIndex|pointerVector|onPointer|gaze\.png/);
- }
+test('IK reaches feasible hand and foot targets without invalid angles',()=>{
+ for(const [x,y]of [[0,90],[40,75],[-45,-50],[15,-95]]){const [a,b]=ik(x,y,60,55);const dx=-Math.sin(a)*60-Math.sin(a+b)*55,dy=Math.cos(a)*60+Math.cos(a+b)*55;assert.ok(Math.hypot(dx-x,dy-y)<.01);}
+ for(const [x,y]of [[0,0],[900,900]])assert.ok(ik(x,y,60,55).every(Number.isFinite));
 });
-test('idle holds a stable body and blinks briefly at spaced intervals',()=>{
- let active=0;
- for(let t=0;t<30000;t+=10){const p=sample('idle',t);assert.equal(p.frame,0);if(p.blink>0)active++;}
- assert.ok(active>40&&active<110,'Blinks occupy only a small fraction of idle time');
- assert.equal(sample('idle',3000).blink,0);assert.ok(sample('idle',5100).blink>.9);
+test('transitions blend every joint without crossfading character images',()=>{
+ const a=sample('wave',900),b=sample('sleep',2300),start=transition(a,b,0),end=transition(a,b,220),mid=transition(a,b,110);
+ assert.equal(start.armR,a.armR);assert.ok(Math.abs(mid.head-(a.head+b.head)/2)<1e-12);assert.deepEqual(end,b);
 });
-test('short gestures settle instead of looping and thinking holds its pose',()=>{
- assert.equal(sample('dance',4000).atlas,'idle-front');
- assert.equal(sample('think',1000).frame,sample('think',9000).frame);
+test('eating has reach, snack, chewing and recovery phases',()=>{
+ assert.equal(sample('eat',0).snack,0);assert.equal(sample('eat',1600).snack,1);assert.ok(sample('eat',3300).snackScale<sample('eat',1600).snackScale);assert.equal(sample('eat',4500).snack,0);
 });
-
-test('transitions preserve the outgoing transform then settle on one incoming sprite',()=>{
- const {transition}=require('../src/renderer/motion.js'),from=sample('jump',480),to=sample('idle',0);
- const start=transition(from,to,0),mid=transition(from,to,90),end=transition(from,to,180);
- assert.equal(start.y,from.y);assert.equal(start.atlas,to.atlas);assert.equal(mid.y,(from.y+to.y)/2);assert.deepEqual(end,to);
- for(const action of Object.keys(clips))for(const t of [0,16,90,179,180]){
-  const p=transition(from,sample(action,500),t);assert.ok(Number.isFinite(p.y)&&p.scaleX>0&&p.scaleY>0);
- }
+test('runtime has no gaze mapping or old sprite atlas fallback',()=>{
+ for(const f of ['src/renderer/app.js','src/renderer/motion.js','src/preload.cjs'])assert.doesNotMatch(fs.readFileSync(path.join(__dirname,'..',f),'utf8'),/lookIndex|pointerVector|onPointer|gaze\.png|motion-basic|motion-extra|motion-walk/);
 });
