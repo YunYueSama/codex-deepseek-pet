@@ -1,0 +1,31 @@
+{
+  "generatedPerSheet": 16,
+  "selected": {
+    "walk": [
+      1,
+      9
+    ],
+    "jump": [
+      2,
+      3,
+      4,
+      13,
+      14,
+      15
+    ],
+    "sleep": [
+      3,
+      5,
+      6,
+      7
+    ]
+  },
+  "criteria": "Paired pose visual review and reduced maximum adjacent image difference; metric alone does not establish anatomical continuity.",
+  "rejectedAfterPlayback": {
+    "sleep": [
+      9,
+      10
+    ],
+    "reason": "Closed-eye candidates still changed head scale at normal speed; existing closed-eye sequence kept."
+  }
+}

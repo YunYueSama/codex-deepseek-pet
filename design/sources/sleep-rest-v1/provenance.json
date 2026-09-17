@@ -1,0 +1,15 @@
+{
+  "tool": "built-in imagegen",
+  "reference": "reference.png",
+  "output": "generated.png",
+  "prompt": "Edit/reference animation production task. Attached image is the exact character and sleeping pose reference. Draw a polished consistent SIX-FRAME sprite sheet, 3 columns x 2 rows, equal square cells, on true transparent background. Same tiny blue whale maid girl, navy blue long hair with periwinkle highlights, same closed eye lines, white maid headband, small blue bow right side of head, dark navy maid dress with white ruffles and gold piping, two anatomically attached hands tucked under cheek, bent knees together and dark shoes on right. ONE blue whale tail curled on far right behind legs, never an extra tail. Side-lying curled sleep pose facing lower left. Match reference silhouette, proportions, colors, facial features and relaxed expression very closely; do not redesign. Each cell must be nearly identical tracing of the same pose: only a small continuous settling motion of hair ends and tail (tail eases inward over 6 frames), chest breathing max 1 percent, head size and location fixed. Closed eyes in all six. Keep same ground baseline and identical character scale in every cell. No random expressions, no expanding/shrinking head, no hand or leg changes. Entire character including tail stays fully inside its own cell with ample margins, centered, no overlap, no words, no borders, no checkerboard. Crisp high quality cel anime outlines and flat shading, not blurry. These six drawings are consecutive in time read left to right top to bottom, not separate character variations.",
+  "processing": "Locally remove border-connected neutral checkerboard; uniformly register whole sprites. User previously authorized local transparent-background processing.",
+  "runtimeFrames": [
+    21,
+    23,
+    25,
+    27,
+    29,
+    31
+  ]
+}

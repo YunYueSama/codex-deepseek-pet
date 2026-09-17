@@ -9,17 +9,24 @@ const { Companion } = require('./behavior.cjs');
 const { complete, endpoint } = require('./chat.cjs');
 const { monitor } = require('./environment.cjs');
 const physics = require('./physics.cjs');
+const {advanceWalk}=require('./walk.cjs');
 const root = path.join(__dirname, '../..');
 const arg = key => process.argv.find(v => v.startsWith(`--${key}=`))?.slice(key.length + 3);
 const testMode = Boolean(arg('test-user-data'));
 if (testMode) app.setPath('userData', path.resolve(arg('test-user-data')));
 let pet, panel, tray, store, vault, settings, timer, stopMonitor, quitting = false, locked = false;
-let drag = null, target = null, walkRemainder = 0, nextWalk = Date.now() + 45000, previousTick = Date.now();
+let drag = null, target = null, walkRemainder = 0, walkTravel = 0, nextWalk = Date.now() + 6000 + Math.random()*4000, previousTick = Date.now();
 let context = {}, lastForeign = {}, lastPointer = '', lastState = '', lastPoll = 0, lastEnvironment = 0;
 let controller = null, history = [], capture = null, captureAt = 0, autoVisionAt = Date.now() + 120000;
 let ignored = false, pointerInside = false, lastWalkDirection = null;
 let visibleWindows = [], windowsSeen = 0, flight = null, support = null;
 const brain = new Companion();
+// 仅隔离集成测试可读几何诊断；正式启动不暴露窗口数据或新增 IPC。
+if(testMode)module.exports.nativeGeometry=()=>({age:Date.now()-windowsSeen,enabled:settings?.windowEdges,windows:visibleWindows});
+if(testMode){
+ module.exports.startTestWalk=(position,distance)=>{stopWalk();support=null;flight=null;settings.autoWander=true;brain.setMode('company');brain.until=0;pet.setBounds(safeBounds(position));target=pet.getBounds().x+distance;nextWalk=Date.now();};
+ module.exports.walkState=()=>({bounds:pet.getBounds(),travel:walkTravel,remainder:walkRemainder,target,action:brain.action,started:brain.started});
+}
 // Windows 的透明宿主窗口至少为 32px；角色本身仍严格按百分比缩放。
 const size = () => ({ width: Math.max(32,Math.round(300 * settings.scale)), height: Math.max(32,Math.round(360 * settings.scale)) });
 const physicalSize = () => ({ ...size(), bodyWidth: 300 * settings.scale });
@@ -63,7 +70,7 @@ function syncMonitor() {
 }
 function openPanel() {
   if (!panel || panel.isDestroyed()) {
-    panel = new BrowserWindow({ width: 930, height: 740, minWidth: 720, minHeight: 620, title: '大肥鱼 · 陪你把今天过好',
+    panel = new BrowserWindow({ width: 930, height: 740, minWidth: 720, minHeight: 620, title: '大肥鱼',
       backgroundColor: '#f7f8fc', autoHideMenuBar: true, show: false, webPreferences: bridgeOptions() });
     configureWindow(panel); panel.loadFile(path.join(root, 'src/renderer/companion.html'));
     panel.once('ready-to-show', () => panel.show());
@@ -137,14 +144,20 @@ function registerIpc() {
     if (!trusted(e)) return;
     send(BrowserWindow.fromWebContents(e.sender), 'pet:settings', publicSettings()); send(BrowserWindow.fromWebContents(e.sender), 'pet:state', brain.snapshot());
     if (e.sender === pet.webContents && arg('capture')) setTimeout(async () => {
-      try { fs.mkdirSync(path.dirname(arg('capture')), { recursive: true }); fs.writeFileSync(arg('capture'), (await pet.webContents.capturePage()).toPNG()); }
+      try {
+        // 截图测试等待素材解码完成，避免把空白窗口当作启动成功。
+        const receipt = await pet.webContents.executeJavaScript(`new Promise((resolve,reject)=>{const until=Date.now()+15000;function check(){if(assetsReady)requestAnimationFrame(()=>requestAnimationFrame(()=>resolve({assetsReady,flowReady:!!flowRenderer?.ready,spriteCount:Object.values(spriteFrames).reduce((n,a)=>n+Object.keys(a).length,0)})));else if(Date.now()>until)reject(new Error('Asset readiness timed out'));else setTimeout(check,50);}check();})`);
+        fs.mkdirSync(path.dirname(arg('capture')), { recursive: true });
+        fs.writeFileSync(arg('capture'), (await pet.webContents.capturePage()).toPNG());
+        fs.writeFileSync(arg('capture') + '.json', JSON.stringify(receipt));
+      } catch (error) { console.error('Capture failed:', error); }
       finally { quitting = true; app.quit(); }
     }, 1800);
   });
   ipcMain.on('pet:open', e => { if (trusted(e)) openPanel(); });
   ipcMain.on('pet:menu', e => { if (trusted(e)) tray.popUpContextMenu(); });
   ipcMain.on('pet:hit', (e, hit) => { if (e.sender === pet?.webContents && typeof hit === 'boolean') { pointerInside = hit; setIgnore(settings.clickThrough || (!hit && !drag)); } });
-  ipcMain.on('pet:interact', (e, kind) => { if (trusted(e)) { stopWalk(); nextWalk = Date.now() + 90000; brain.interact(kind); } });
+  ipcMain.on('pet:interact', (e, kind) => { if (trusted(e)) { stopWalk(); nextWalk = Date.now() + 10000 + Math.random()*8000; brain.interact(kind); } });
   ipcMain.on('pet:drag', (e, value) => {
     if (!trusted(e) || !value) return; const { phase, point } = value;
     if (phase === 'end') { if (drag) {
@@ -202,7 +215,8 @@ function registerIpc() {
   });
 }
 function stopWalk(settle=false) {
-  walkRemainder=0;
+  if(walkRemainder||walkTravel)send(pet,'pet:walk-offset',{offset:0,elapsed:null});
+  walkRemainder=0;walkTravel=0;
   if (target !== null || lastWalkDirection) { target = null; lastWalkDirection = null; if (['left', 'right'].includes(brain.action)) { const direction=brain.action;brain.until = 0; brain.play(settle?`stop-${direction}`:'idle', '', 0, settle?1:0); } }
 }
 function physicalTick(dt) {
@@ -259,11 +273,13 @@ function tick() {
     // 转身时不滑行，随后缓起步，接近目标时减速收步。
     const startup=Math.max(0,Math.min(1,(now-brain.started-600)/300));
     const braking=Math.min(1,Math.max(.2,Math.abs(delta)/(24*settings.scale)));
-    const distance = Math.min(Math.abs(delta),55*settings.scale*startup*braking*dt+walkRemainder);
-    const step = Math.sign(delta)*Math.floor(distance);walkRemainder=distance-Math.abs(step);
+    const movement=advanceWalk(delta,55*settings.scale*startup*braking*dt,walkRemainder);
+    const step=movement.step;walkTravel+=Math.max(0,Math.abs(step)+movement.remainder-walkRemainder);walkRemainder=movement.remainder;
     pet.setBounds(fixedSizeBounds({ x: b.x + step, y: b.y }, size()), false);
+    // 步态随真实路程推进；起步和刹车时不会脚快速蹬、身体却慢慢滑。
+    send(pet,'pet:walk-offset',{offset:movement.offset,elapsed:walkTravel/(55*Math.max(.01,settings.scale))*1000});
     if(support)support.anchorX+=step;
-    if (Math.abs(delta) <= Math.abs(step)) { stopWalk(true); nextWalk = now + 60000 + Math.random() * 50000; savePosition(); }
+    if (Math.abs(delta) <= Math.abs(step)) { stopWalk(true); nextWalk = now + 12000 + Math.random() * 12000; savePosition(); }
   }
   if (settings.autoVision && settings.vision && !full && !locked && !controller && !drag && brain.mode === 'company' && now > autoVisionAt && lastForeign.handle && powerMonitor.getSystemIdleTime() < 60) {
     autoVisionAt = now + 120000;

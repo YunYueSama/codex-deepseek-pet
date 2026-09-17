@@ -17,7 +17,15 @@
 
 `assets/你这吃白饭的蓝色大肥鱼.png` 是项目灵感来源的社区参考图，原作者与授权尚待核实；不能仅凭本仓库的署名许可将其视为可自由转载或商用的原创素材。其他第三方参考内容同样以原权利人的授权为准。已记录的参考来源见[角色设定](docs/角色设定.md#参考与归属)。若你是相关权利人，欢迎联系维护者补充署名或调整使用方式。
 
+新增的四张用户提供社区参考图及各自用途见 [2026-09-15 参考素材](design/references/community-20260915/README.md)。原作者与原始发布链接尚待补充，保留原图，不纳入本项目作者可再授权的原创素材范围。
+
+补充的三张工作小剧情图片见 [工作小剧情参考](design/references/community-20260916/README.md)，同样属于用户提供的第三方参考，原作者与发布链接尚待核实。
+
+本轮重绘的参考、原图、提示词及处理方式见 [stories-v2](design/sources/stories-v2/README.md)。其中用户参考图仍按第三方参考处理。
+
 ## 字体与依赖
+
+高清待机与面板立绘的原图、生成提示词和处理记录见 [idle-hq-v1](design/sources/idle-hq-v1/README.md)，适用上述新增贡献及第三方参考边界。
 
 `assets/fonts/` 中 Noto Serif SC 字体使用 SIL Open Font License，完整许可见 [OFL.txt](assets/fonts/OFL.txt)。第三方代码和依赖保持其各自许可，使用时应一并遵守相应声明。
 

@@ -60,11 +60,14 @@ child.on('exit', (code, signal) => {
     }
 
     const size = readPngSize(capturePath);
+    const receipt = JSON.parse(fs.readFileSync(capturePath + '.json', 'utf8'));
+    if (!receipt.assetsReady || receipt.spriteCount < 200) throw new Error('Sprite preload did not complete.');
+    if (process.env.PET_SMOKE_REQUIRE_FLOW === '1' && !receipt.flowReady) throw new Error('Motion interpolation is unavailable.');
     if (size.width < 200 || size.height < 250) {
       throw new Error(`Electron smoke capture is unexpectedly small: ${size.width}x${size.height}.`);
     }
 
-    process.stdout.write(`Electron smoke test passed (${size.width}x${size.height}).\n`);
+    process.stdout.write(`Electron smoke test passed (${size.width}x${size.height}), ${JSON.stringify(receipt)}.\n`);
   } finally {
     fs.rmSync(temporaryRoot, { recursive: true, force: true });
   }

@@ -12,8 +12,9 @@ const empty=(w,h)=>sharp({create:{width:w,height:h,channels:4,background:transpa
  };
  const actions=await readFrames('actions');
  const extra=await readFrames('expressions');
- const front=await sharp(path.join(out,'idle-front.png')).extract({left:0,top:0,width:512,height:512}).png().toBuffer();
- const frontBlink=await sharp(path.join(out,'idle-front.png')).extract({left:512,top:0,width:512,height:512}).png().toBuffer();
+ const idleFile=path.join(out,'idle-front.png'),idleCell=(await sharp(idleFile).metadata()).width/2;
+ const front=await sharp(idleFile).extract({left:0,top:0,width:idleCell,height:idleCell}).png().toBuffer();
+ const frontBlink=await sharp(idleFile).extract({left:idleCell,top:0,width:idleCell,height:idleCell}).png().toBuffer();
  await sharp(front).toFile(path.join(out,'portrait.png'));
  // 应用图标由 build-brand.cjs 单独编译，禁止重新用全身立绘覆盖。
  const all=[...actions,...extra];

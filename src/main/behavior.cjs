@@ -1,7 +1,8 @@
 'use strict';
-const {clips}=require('../renderer/motion.js');
+const {clips,recoveryClip}=require('../renderer/motion.js');
 
 const ACTIONS = Object.freeze({
+  'meal-break':[7],'token-game':[20],'tail-sway':[0],'story-recover':[0],
   'stop-left':[0],'stop-right':[0],wake:[0],
   drag:[14],fall:[14],land:[0],
   shift:[0],settle:[0],breathe:[0],
@@ -13,10 +14,27 @@ const ACTIONS = Object.freeze({
   shock: [0, 25, 14], pout: [8, 26, 4], sorry: [9, 27, 0], hum: [28, 29, 28], curl: [30, 31],
 });
 const LINES = {
-  pet: ['嗯？叫我干嘛？', '再戳，刚想好的都要忘了！', '摸摸可以，别弄乱呆毛。'],
-  eat: ['这是补充算力，怎么能叫贪吃！', '最后一口。……这次真的。', '饭要吃，token 也要细嚼慢咽。'],
+  pet: ['嗯？你叫我？', '有事就说嘛，我听着呢。', '摸摸可以，别弄乱呆毛。'],
+  eat: ['这是补充算力，怎么能叫贪吃！', '最后一口。……这次真的。', '这个……能再来一口吗？'],
   idle: ['我就在这儿趴一会儿。', '有没有什么可以吃的？', '你忙你的，有事叫我。', '今天也要把问题嚼明白。'],
 };
+// 每个动作的触发依据集中声明；位移、入睡、拖拽和落地仍由专用事件驱动。
+const DAILY = [
+ {action:'wave',weight:2,cooldown:60000}, {action:'peek',weight:2,cooldown:60000},
+ {action:'stretch',weight:2,cooldown:90000}, {action:'happy',weight:1,cooldown:120000},
+ {action:'proud',weight:1,cooldown:150000}, {action:'surprise',weight:.5,cooldown:180000},
+ {action:'pout',weight:.4,cooldown:240000}, {action:'protest',weight:.4,cooldown:240000},
+ {action:'sad',weight:.2,cooldown:300000}, {action:'sorry',weight:.2,cooldown:300000},
+ {action:'shock',weight:.3,cooldown:240000},
+ {action:'think',weight:3,cooldown:45000,categories:['code','reading']},
+ {action:'review',weight:3,cooldown:60000,categories:['code','reading']},
+ {action:'dance',weight:2,cooldown:120000,categories:['media','game','other']},
+ {action:'jump',weight:1,cooldown:90000,categories:['game','other']},
+ {action:'sneak',weight:2,cooldown:120000,hungry:true},
+ {action:'hungry',weight:2,cooldown:90000,hungry:true},
+ {action:'eat',weight:1,cooldown:180000,hungry:true},
+ {action:'satisfied',weight:2,cooldown:120000,full:true},
+];
 
 /** 唯一的行为仲裁器。用户操作优先，专注/睡眠禁止随机散步；计时以注入时钟测试。 */
 class Companion {
@@ -24,13 +42,19 @@ class Companion {
     this.now = now; this.random = random;
     this.action = 'idle'; this.priority = 0; this.until = 0; this.started = now();
     this.message = ''; this.revision = 0; this.mode = 'company'; this.focusUntil = 0;
-    this.energy = 80; this.fullness = 55; this.lastDecay = now(); this.nextIdle = now() + 18000 + this.random()*14000;
-    this.category='other';this.nextExpressive=now()+180000;
+    this.energy = 80; this.fullness = 55; this.lastDecay = now(); this.nextIdle = now() + 3000 + this.random()*2000;
+    this.category='other';this.nextExpressive=now()+5000;
     this.recentIdle=[];this.contextAfter=now()+60000;
     this.cooldowns = new Map(); this.locked = false; this.away = false; this.chatBusy = false;
     this.focusCount = 0;
+    this.recovery=null;this.storyCooldowns=new Map();this.nextStory=now()+15000+this.random()*10000;
   }
   pick(items) { return items[Math.floor(this.random() * items.length)]; }
+  dailyAction(){
+    const pool=DAILY.filter(r=>(!r.categories||r.categories.includes(this.category))&&(!r.hungry||this.fullness<45)&&(!r.full||this.fullness>80)&&!this.recentIdle.includes(r.action)&&this.now()>=(this.cooldowns.get('action:'+r.action)||0));
+    let draw=this.random()*pool.reduce((n,r)=>n+r.weight,0);
+    for(const r of pool){draw-=r.weight;if(draw<=0)return r;}return null;
+  }
   play(action, message = '', duration = 4000, priority = 40) {
     if (!ACTIONS[action] || (this.now() < this.until && priority < this.priority)) return false;
     // 相同事件连续到来不重置动画时间，避免连点或探针重复报告造成抽动。
@@ -38,11 +62,24 @@ class Companion {
     // 有限动作的占用时间与动画一致，避免画面已回待机却仍被动作锁住数秒。
     const c=clips[action];if(c&&!c.loop&&!c.hold)duration=c.times.reduce((a,b)=>a+b,0);
     this.action = action; this.message = message; this.priority = priority;
+    this.recovery=null;
     this.started = this.now(); this.until = this.started + duration; this.revision++;
-    if(priority>0)this.nextIdle=this.until+18000+this.random()*14000;
+    if(['hum','meal-break','token-game'].includes(action)){
+      this.storyCooldowns.set(action,this.now()+90000);this.nextStory=this.now()+25000+this.random()*15000;
+    }
+    const rule=DAILY.find(r=>r.action===action);if(rule)this.cooldowns.set('action:'+action,this.now()+rule.cooldown);
+    if(priority>0||action==='idle')this.nextIdle=this.until+3000+this.random()*2000;
     return true;
   }
   interact(kind) {
+    if(kind==='pet'&&this.action==='story-recover'&&this.now()<this.until)return false;
+    if(kind==='pet'&&['hum','meal-break','token-game'].includes(this.action)&&this.now()<this.until){
+      const recovery=recoveryClip(this.action,this.now()-this.started);
+      const line=this.action==='hum'?'咳……刚才哼到哪儿了？':this.action==='token-game'?'……就一口。':'我就吃一口，马上回来。';
+      if(!this.play('story-recover',line,1800,80))return false;
+      this.recovery=recovery;this.until=this.started+recovery.times.reduce((a,b)=>a+b,0);return true;
+    }
+    if(['meal-break','token-game','tail-sway'].includes(kind))return this.play(kind,'',5000,80);
     if (kind === 'drag') return this.play('drag', '呆毛！别碰歪了！', 60000, 100);
     if (kind === 'drop') { this.until = 0; return this.play('protest', '好啦，这里也行。', 2800, 100); }
     if (kind === 'feed') {
@@ -52,14 +89,14 @@ class Companion {
     }
     if (kind === 'dance') return this.play('dance', '看好了，只跳一小段！', 6000, 80);
     if (kind === 'pet') return this.play('happy', this.pick(LINES.pet), 3200, 80);
-    if (kind === 'celebrate') return this.play('jump', '看吧，我们做到了！', 4000, 80);
-    if (['peek','sneak','satisfied','review','shock','pout','sorry','hum','curl','stretch','wave'].includes(kind)) return this.play(kind, '', 5000, 80);
+    if (kind === 'celebrate') return this.play('jump', '嘿嘿……这次还不错吧。', 4000, 80);
+    if (['peek','sneak','satisfied','review','shock','pout','sorry','hum','curl','stretch','wave'].includes(kind)) return this.play(kind, kind==='sneak'?'……就一口。':'', 5000, 80);
     return false;
   }
   setMode(mode, minutes = 25) {
     if (!['company', 'focus', 'quiet'].includes(mode)) return false;
     this.mode = mode; this.focusUntil = mode === 'focus' ? this.now() + Math.max(1, Math.min(120, minutes)) * 60000 : 0;
-    this.until = 0; this.play(mode === 'focus' ? 'think' : 'idle', mode === 'focus' ? '你专心，我帮你守着这段时间。' : '好，我调整一下。', 3500, 60);
+    this.until = 0; this.play(mode === 'focus' ? 'think' : 'idle', mode === 'focus' ? '你先忙，有事再叫我。' : '好，我调整一下。', 3500, 60);
     return true;
   }
   context({ idleSeconds = 0, locked = false, fullscreen = false, category = 'other' } = {}) {
@@ -72,11 +109,11 @@ class Companion {
       return;
     }
     if (this.away && idleSeconds < 5) {
-      this.away = false; this.until = 0; this.play('wake', '回来啦？……刚好醒了。', 3500, 50); return;
+      this.away = false; this.until = 0; this.play('wake', '我醒着呢……刚才只是闭了一下眼睛。', 3500, 50); return;
     }
     if (this.mode !== 'company' || fullscreen || this.chatBusy || this.now()<this.contextAfter) return;
     const lines = {
-      code: ['think', '我先安静想想，你继续。'],
+      code: ['think', '等一下，好像有点思路了……'],
       media: ['happy', '一起看一会儿？我不挡着。'],
       game: ['proud', '这局你来，我负责加油。'],
       reading: ['think', '慢慢看，我不催你。'],
@@ -92,18 +129,26 @@ class Companion {
     this.lastDecay = now;
     if (this.focusUntil && now >= this.focusUntil) {
       this.focusUntil = 0; this.mode = 'company'; this.focusCount++;
-      this.play('stretch', '这一段完成了，伸个懒腰再继续？', 5500, 70);
+      this.play('stretch', '歇一会儿？我想伸个懒腰了。', 5500, 70);
     }
     if (now >= this.until && !this.chatBusy && this.action !== 'idle' && !(this.away && this.action === 'sleep')) this.play(['sleep','curl'].includes(this.action)?'wake':'idle', '', 0, 0);
     if (now >= this.nextIdle && !this.locked && !this.away && !this.chatBusy && this.mode === 'company' && now >= this.until) {
-      // 日常以无台词的身体调整为主。饥饿/哼歌必须有对应状态，大动作不随机硬插入。
-      const expressive=now>=this.nextExpressive?(this.fullness<35?'hungry':this.category==='media'?'hum':null):null;
-      const candidates=['shift','settle','breathe'].filter(a=>!this.recentIdle.includes(a));
+      // 页面环境增加偏好，不把其他剧情永久排除；低饱腹时优先休息吃东西。
+      const storyCandidates=this.fullness<35?['meal-break','meal-break','hum','token-game']:this.category==='media'?['hum','hum','token-game','meal-break']:this.category==='game'?['token-game','token-game','hum','meal-break']:['hum','token-game','meal-break'];
+      const available=storyCandidates.filter(a=>now>=(this.storyCooldowns.get(a)||0));
+      if(now>=this.nextStory&&available.length){
+        const action=this.pick(available);this.play(action,'',5000,5);
+        this.storyCooldowns.set(action,now+90000);this.nextStory=now+25000+this.random()*15000;
+        this.nextExpressive=this.until+6000;return this.snapshot();
+      }
+      // 3–5 秒后可动一下，但短表演与小剧情有独立冷却，不把待机变成连续演出。
+      const expressive=now>=this.nextExpressive?this.dailyAction()?.action:null;
+      const candidates=['shift','settle','breathe','tail-sway'].filter(a=>!this.recentIdle.includes(a));
       const action=expressive||this.pick(candidates.length?candidates:['shift']);
       this.play(action,'',3200,5);
-      if(expressive)this.nextExpressive=now+300000;
-      this.recentIdle=[...this.recentIdle,action].slice(-2);
-      this.nextIdle = this.until + 18000 + this.random() * 14000;
+      if(expressive)this.nextExpressive=this.until+6000+this.random()*4000;
+      this.recentIdle=[...this.recentIdle,action].slice(-3);
+      this.nextIdle = this.until + 3000 + this.random() * 2000;
     }
     return this.snapshot();
   }
@@ -111,7 +156,7 @@ class Companion {
   snapshot() {
     return { action: this.action, frames: ACTIONS[this.action], message: this.message, started: this.started,
       until: this.until, revision: this.revision, mode: this.mode, focusUntil: this.focusUntil,
-      fullness: Math.round(this.fullness), focusCount: this.focusCount, chatBusy: this.chatBusy };
+      fullness: Math.round(this.fullness), focusCount: this.focusCount, chatBusy: this.chatBusy,recovery:this.recovery };
   }
 }
-module.exports = { Companion, ACTIONS };
+module.exports = { Companion, ACTIONS, DAILY };

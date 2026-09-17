@@ -15,7 +15,7 @@ $('#start-chat').onclick=()=>{tab('chat');$('#prompt').focus();};
 $('#feed').onclick=()=>api?.interact('feed');
 document.querySelectorAll('[data-action]').forEach(e=>e.onclick=()=>api?.interact(e.dataset.action));
 async function call(fn){try{const r=await fn();if(!r.ok)throw new Error(r.error);return r.value;}catch(e){notice(e.message||'暂时无法完成，请重试。');return undefined;}}
-function updateState(value){state=value;$('#mode-label').textContent=({company:'自在陪伴',focus:'一起专注',quiet:'安静陪伴'})[state.mode]||'自在陪伴';$('#status').textContent=state.chatBusy?'大肥鱼正在想……':'我在这里';$('#fullness').textContent=state.fullness>85?'满足了，下一顿再叫我。':state.fullness<35?'有点馋，想补充脑力口粮。':'刚刚好，还能再吃一点。';$('#focus').textContent=state.mode==='focus'?'结束专注':'开始专注';updateClock();}
+function updateState(value){state=value;$('#mode-label').textContent=({company:'自在待着',focus:'一起专注',quiet:'安静待着'})[state.mode]||'自在待着';$('#status').textContent=state.chatBusy?'等一下，好像有点思路了……':'有事就说嘛，我听着呢。';$('#fullness').textContent=state.fullness>85?'满足了，下一顿再叫我。':state.fullness<35?'有点馋，想补充脑力口粮。':'刚刚好，还能再吃一点。';$('#focus').textContent=state.mode==='focus'?'结束专注':'开始专注';updateClock();}
 function updateClock(){const s=Math.max(0,Math.ceil(((state.focusUntil||0)-Date.now())/1000));$('#focus-clock').textContent=s?`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`:'一起专注';}
 setInterval(updateClock,1000);
 $('#focus').onclick=()=>call(()=>api.mode(state.mode==='focus'?'company':'focus',Number($('#minutes').value))).then(v=>v&&updateState(v));
@@ -37,7 +37,7 @@ $('#remove-capture').onclick=removeCapture;
 $('#capture').onclick=async()=>{const image=await call(()=>api.capture());if(image){attached=true;$('#capture-preview').src=image;$('#attachment').hidden=false;}};
 function fillSettings(s){currentSettings=s;const form=$('#settings-form');for(const [key,value] of Object.entries(s)){const field=form.elements.namedItem(key);if(!field)continue;if(field.type==='checkbox')field.checked=value===true;else field.value=value??'';}
   $('#size-slider').value=Math.round(s.scale*100);$('#size-output').textContent=`${Math.round(s.scale*100)}%`;
-  form.elements.apiKey.value='';form.elements.removeKey.checked=false;$('#key-state').textContent=s.hasKey?'已安全保存访问密钥。':'尚未保存密钥；无认证的本机服务可留空。';$('#memory-summary').textContent=s.memory||'你可以在设置里告诉我，希望怎样陪你。';}
+  form.elements.apiKey.value='';form.elements.removeKey.checked=false;$('#key-state').textContent=s.hasKey?'已安全保存访问密钥。':'尚未保存密钥；无认证的本机服务可留空。';$('#memory-summary').textContent=s.memory||'叫你什么、什么时候安静？去设置里告诉我。';}
 $('#settings-form').onsubmit=async e=>{e.preventDefault();$('#save-settings').disabled=true;const form=e.currentTarget;const values={};
   for(const field of form.elements){if(!field.name||['apiKey','removeKey'].includes(field.name))continue;values[field.name]=field.type==='checkbox'?field.checked:field.name==='scale'?Number(field.value):field.value;}
   values.scale=Number($('#size-slider').value)/100;delete values.scalePercent;
@@ -47,7 +47,7 @@ $('#settings-form').onsubmit=async e=>{e.preventDefault();$('#save-settings').di
 $('#export').onclick=async()=>{const dest=await call(()=>api.exportPet());if(dest)notice(`宠物包已导出到：${dest}`);};
 let sizeTimer=null;
 $('#size-slider').oninput=()=>{const percent=Number($('#size-slider').value);$('#size-output').textContent=`${percent}%`;clearTimeout(sizeTimer);sizeTimer=setTimeout(()=>call(()=>api.scale(percent/100)),60);};
-const expressions=[['摸摸','pet'],['吃 token','feed'],['跳舞','dance'],['庆祝','celebrate'],['打招呼','wave'],['探头','peek'],['偷偷伸手','sneak'],['吃饱满足','satisfied'],['认真审阅','review'],['震惊','shock'],['鼓腮赌气','pout'],['认错','sorry'],['哼歌','hum'],['蜷起来','curl'],['伸懒腰','stretch']];
+const expressions=[['摸摸','pet'],['吃 token','feed'],['跳舞','dance'],['庆祝','celebrate'],['打招呼','wave'],['探头','peek'],['偷偷伸手','sneak'],['吃饱满足','satisfied'],['认真审阅','review'],['震惊','shock'],['鼓腮赌气','pout'],['认错','sorry'],['偷偷哼歌','hum'],['饭前小憩','meal-break'],['偷吃玩字谜','token-game'],['轻摇尾巴','tail-sway'],['蜷起来','curl'],['伸懒腰','stretch']];
 for(const [name,kind]of expressions){const button=document.createElement('button');button.textContent=name;button.onclick=()=>api?.interact(kind);$('#expression-gallery').append(button);}
 function moveToken(){const board=$('#game-board');const token=$('#token');token.style.left=`${12+Math.random()*Math.max(1,board.clientWidth-72)}px`;token.style.top=`${12+Math.random()*Math.max(1,board.clientHeight-72)}px`;}
 function stopGame(){clearInterval(gameTimer);gameTimer=null;$('#token').hidden=true;$('#game-start').disabled=false;$('#score').textContent=`接住 ${score} 口！大肥鱼收好了。`;api?.interact(score>5?'celebrate':'feed');}
@@ -56,5 +56,5 @@ $('#token').onclick=()=>{if(!gameTimer)return;score++;moveToken();};
 window.addEventListener('beforeunload',()=>clearInterval(gameTimer));
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&gameTimer)stopGame();});
 api?.onState(updateState);api?.onNotice(notice);
-api?.onSettings(s=>{currentSettings=s;if(!s.autoVision)$('#settings-form').elements.autoVision.checked=false;$('#memory-summary').textContent=s.memory||'你可以在设置里告诉我，希望怎样陪你。';});
+api?.onSettings(s=>{currentSettings=s;if(!s.autoVision)$('#settings-form').elements.autoVision.checked=false;$('#memory-summary').textContent=s.memory||'叫你什么、什么时候安静？去设置里告诉我。';});
 if(api){call(()=>api.settings()).then(data=>{if(!data)return;fillSettings(data.settings);updateState(data.state);for(const m of data.history)message(m.role,m.content);});api.ready();}else notice('这是界面预览。桌面功能请通过应用启动。');
