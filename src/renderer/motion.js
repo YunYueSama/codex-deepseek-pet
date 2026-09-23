@@ -3,6 +3,7 @@
  'use strict';
  const seq=(start,count=8)=>Array.from({length:count},(_,i)=>start+i);
  const clip=(atlas,frames,ms,loop=false,hold=false)=>({atlas,frames,times:Array.isArray(ms)?ms:frames.map(()=>ms),loop,hold});
+ const flowAtlases=new Set(['inbetween-walk','dense-wave','dense-eat','story-hum','inbetween-jump','inbetween-sleep','dense-dance','dense-sneak','dense-idle','story-meal','story-token','story-tail','actions','expressions']);
  const clips={
   drag:clip('motion-extra',[8],100,false,true),fall:clip('motion-extra',[10],100,false,true),land:clip('motion-extra',[13,14,15],[100,180,720]),
   idle:clip('idle-front',[0],1000,true),
@@ -140,8 +141,13 @@
   if(!c.loop&&!c.hold&&t>=duration)return sample('idle',t-duration,reduced);
   if(reduced)t=0;else if(c.loop)t%=duration;else t=Math.min(t,duration-1);
   let index=0;while(index<c.times.length-1&&t>=c.times[index]){t-=c.times[index];index++;}
-  let atlas=c.atlas,frame=c.frames[index];if(atlas==='legacy'){atlas=frame>=16?'expressions':'actions';frame%=16;}
-  const flow=!reduced&&['inbetween-walk','dense-wave','dense-eat','story-hum'].includes(atlas)?{nextFrame:c.frames[index+1]??(c.loop?c.frames[0]:frame),frameMix:t/c.times[index]}:{};
+  const rawAtlas=c.atlas,rawFrame=c.frames[index],rawNext=c.frames[index+1]??(c.loop?c.frames[0]:rawFrame);
+  let atlas=rawAtlas,frame=rawFrame,nextAtlas=rawAtlas,nextFrame=rawNext;
+  if(rawAtlas==='legacy'){
+   atlas=rawFrame>=16?'expressions':'actions';frame=rawFrame%16;
+   nextAtlas=rawNext>=16?'expressions':'actions';nextFrame=rawNext%16;
+  }
+  const flow=!reduced&&flowAtlases.has(atlas)&&nextAtlas===atlas&&nextFrame!==frame?{nextFrame,frameMix:t/c.times[index]}:{};
   const phase=elapsed/1000;
   // 逐帧肢体是主要运动；小幅呼吸和重心曲线提供帧间连续性，脚底保持锚定。
   // 静止待机保持原尺寸，避免每帧微缩放使细线在相邻像素间变软；呼吸仍有专用动作。

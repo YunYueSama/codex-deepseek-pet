@@ -104,6 +104,28 @@ test('story originals have transparent margins and no magenta background in used
  }
 });
 
+test('story action blues stay within the current idle palette',async()=>{
+ const hsv=(r,g,b)=>{r/=255;g/=255;b/=255;const max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;let h=0;
+  if(d){if(max===r)h=60*(((g-b)/d)%6);else if(max===g)h=60*((b-r)/d+2);else h=60*((r-g)/d+4);}
+  return {h:(h+360)%360,s:max?d/max:0,v:max};};
+ const profile=async(file,cell,columns,rows)=>{
+  const {data,info}=await sharp(file).ensureAlpha().raw().toBuffer({resolveWithObject:true}),hues=[],sats=[];
+  for(let y=0;y<info.height;y+=4)for(let x=0;x<info.width;x+=4){
+   if(Math.floor(y/cell)>=rows||Math.floor(x/cell)>=columns)continue;
+   const i=(y*info.width+x)*4;if(data[i+3]<200)continue;const c=hsv(data[i],data[i+1],data[i+2]);
+   if(c.h>=215&&c.h<=270&&c.s>.2&&c.v>.16&&c.v<.92){hues.push(c.h);sats.push(c.s);}
+  }
+  const median=values=>values.sort((a,b)=>a-b)[Math.floor(values.length/2)];
+  return {hue:median(hues),saturation:median(sats)};
+ };
+ const target=await profile(path.join(__dirname,'../assets/whale/idle-front.png'),1024,1,1);
+ for(const name of ['hum','meal','token']){
+  const actual=await profile(path.join(__dirname,`../assets/whale/story-${name}.png`),384,4,8);
+  assert.ok(Math.abs(actual.hue-target.hue)<=3,`${name} blue hue ${actual.hue.toFixed(1)} vs idle ${target.hue.toFixed(1)}`);
+  assert.ok(Math.abs(actual.saturation-target.saturation)<=.06,`${name} blue saturation ${actual.saturation.toFixed(2)} vs idle ${target.saturation.toFixed(2)}`);
+ }
+});
+
 
 
 test('airborne displacement follows the actual jump stage and returns to the floor',()=>{

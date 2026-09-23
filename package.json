@@ -18,7 +18,7 @@
     "test:electron": "node scripts/smoke-electron.cjs",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --win nsis portable",
-    "assets:build": "node scripts/build-hq.cjs && node scripts/build-brand.cjs && node scripts/build-assets.cjs",
+    "assets:build": "node scripts/build-hq.cjs && node scripts/build-brand.cjs && node scripts/build-assets.cjs && node scripts/build-motion-flow.cjs && node scripts/build-showcase.cjs",
     "assets:brand": "node scripts/build-brand.cjs && node scripts/build-assets.cjs",
     "assets:stories": "node scripts/build-stories.cjs && node scripts/build-stories-v2.cjs",
     "assets:idle": "node scripts/build-idle-hq.cjs",

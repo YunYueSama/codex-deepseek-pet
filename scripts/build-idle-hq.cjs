@@ -1,9 +1,12 @@
 'use strict';
 // 待机单独使用高分辨率原画；仅清理透明背景碎点，保留原始轮廓与整身比例。
 const fs=require('node:fs'),path=require('node:path'),sharp=require('sharp');
-const root=path.join(__dirname,'..'),source=path.join(root,'design/sources/idle-hq-v1/idle-pair.png');
+const root=path.join(__dirname,'..'),source=path.join(root,'design/sources/hq-v5/idle-pair-magenta.png');
 async function buildIdle(){
- const {data,info}=await sharp(source).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+ const alphaSource=path.join(root,'artifacts/hq-v5/idle-pair-alpha.png');
+ fs.mkdirSync(path.dirname(alphaSource),{recursive:true});
+ require('node:child_process').execFileSync(process.execPath,[path.join(__dirname,'key-motion.cjs'),source,alphaSource],{stdio:'inherit',windowsHide:true});
+ const {data,info}=await sharp(alphaSource).ensureAlpha().raw().toBuffer({resolveWithObject:true});
  const w=info.width,h=info.height,labels=new Int32Array(w*h),queue=new Int32Array(w*h),parts=[];
  for(let p=0;p<w*h;p++)if(!labels[p]&&data[p*4+3]>=96){
   const b={id:parts.length+1,left:w,top:h,right:0,bottom:0};let head=0,tail=0;queue[tail++]=p;labels[p]=b.id;
@@ -34,7 +37,7 @@ async function buildIdle(){
  }
  await sharp({create:{width:cell*2,height:cell,channels:4,background:{r:0,g:0,b:0,alpha:0}}}).composite(frames.map((input,i)=>({input,left:i*cell,top:0}))).png().toFile(path.join(root,'assets/whale/idle-front.png'));
  await sharp(frames[0]).png().toFile(path.join(root,'assets/whale/portrait.png'));
- fs.mkdirSync(path.join(root,'artifacts/clarity-v9'),{recursive:true});fs.writeFileSync(path.join(root,'artifacts/clarity-v9/source-resolution.json'),JSON.stringify(report,null,2));console.log(report);
+ fs.mkdirSync(path.join(root,'artifacts/clarity-v10'),{recursive:true});fs.writeFileSync(path.join(root,'artifacts/clarity-v10/source-resolution.json'),JSON.stringify(report,null,2));console.log(report);
 }
 if(require.main===module)buildIdle().catch(e=>{console.error(e);process.exitCode=1;});
 module.exports={buildIdle};

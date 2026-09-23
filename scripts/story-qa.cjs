@@ -16,10 +16,10 @@ if(!process.versions.electron){
   for(const action of actions){
    console.log('Playing',action);
    await pet.webContents.executeJavaScript(`api.interact(${JSON.stringify(action)});true;`);
-   await wait(()=>pet.webContents.executeJavaScript(`state.action===${JSON.stringify(action)}`));await sleep(2400);
+   await wait(()=>pet.webContents.executeJavaScript(`state.action===${JSON.stringify(action)}`));await sleep(650);
    if(action!=='tail-sway'){
     await pet.webContents.executeJavaScript("api.interact('pet');true;");await wait(()=>pet.webContents.executeJavaScript("state.action==='story-recover'"));
-    await wait(()=>pet.webContents.executeJavaScript("state.action==='idle'"));
+    await wait(()=>pet.webContents.executeJavaScript("state.action!=='story-recover'"));
    }
   }
   report.pacing=await pet.webContents.executeJavaScript(`(()=>{paint=qaPaint;const t=qaTimes,d=t.slice(1).map((v,i)=>v-t[i]).sort((a,b)=>a-b);return {frames:t.length,fps:(t.length-1)*1000/(t.at(-1)-t[0]),p95:d[Math.floor(d.length*.95)],max:d.at(-1)};})()`);

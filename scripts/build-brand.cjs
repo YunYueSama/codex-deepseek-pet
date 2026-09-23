@@ -1,11 +1,11 @@
 'use strict';
 // 独立保留角色标准图、正面眨眼原图及图标原图，避免通用素材构建覆盖品牌资源。
 const fs=require('node:fs'),path=require('node:path'),sharp=require('sharp'),{execFileSync}=require('node:child_process');
-const root=path.join(__dirname,'..'),source=path.join(root,'design/sources/brand'),out=path.join(root,'artifacts/brand');
+const root=path.join(__dirname,'..'),source=path.join(root,'design/sources/hq-v5'),out=path.join(root,'artifacts/brand');
 const clear={r:0,g:0,b:0,alpha:0};
 (async()=>{
  fs.mkdirSync(out,{recursive:true});
- execFileSync(process.execPath,[path.join(__dirname,'key-motion.cjs'),path.join(source,'app-icon-magenta.png'),path.join(out,'app-icon.png')],{stdio:'inherit',windowsHide:true});
+ await sharp(path.join(source,'app-icon-redraw.png')).ensureAlpha().png().toFile(path.join(out,'app-icon.png'));
  // 待机不再从多帧小图放大；品牌构建与剧情构建共用唯一的高清入口。
  await require('./build-idle-hq.cjs').buildIdle();
  const badge=await sharp(path.join(out,'app-icon.png')).trim({background:'#00000000',threshold:10}).resize(480,480,{fit:'contain',background:clear}).png().toBuffer();
